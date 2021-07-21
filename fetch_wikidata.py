@@ -2,6 +2,7 @@ import re
 from typing import Match
 import urllib
 import json
+from pandas.io import parsers
 import requests
 from threading import *
 from time import *
@@ -62,7 +63,8 @@ class Synonyms_finder(Thread):
         #       * double name (Q1243157)
         #       * matronymic (Q1076664)
         #       * patronymic (Q110874)
-        self.instances = ["Q101352","Q202444","Q3409032","Q11879590","Q12308941","Q1243157","Q1076664","Q110874"]
+        #       * disambiquation page (Q4167410)
+        self.instances = ["Q101352","Q202444","Q3409032","Q11879590","Q12308941","Q1243157","Q1076664","Q110874","Q4167410"]
         self.qs = [] #list of qs associated with the value
         self.alias = {}
         self.synonyms = []
@@ -111,29 +113,38 @@ class Synonyms_finder(Thread):
 
     def __load_credentials(self):
         '''Load proxy credentials
+        use it if you have proxy
         '''
-        credentials = open(".\conf\local\credentials.txt","r")
-        self.key = credentials.readline()[:-1]
-        self.user = credentials.readline()[:-1]
-        self.pwd = credentials.readline()[:-1]
-        credentials.close()
+        # credentials = open(".\conf\local\credentials.txt","r")
+        # self.key = credentials.readline()[:-1]
+        # self.user = credentials.readline()[:-1]
+        # self.pwd = credentials.readline()[:-1]
+        # credentials.close()
 
     def __install_openner(self):
         '''Create a proxy gate for requests
+        use it if you have proxy
         '''
-        proxy_url = "@proxy-sgt.si.socgen:8080"
-        proxy = {"https": "https://" + self.user + ":" + self.pwd + proxy_url}
-        proxy_support = urllib.request.ProxyHandler(proxy)
-        opener = urllib.request.build_opener(proxy_support)
-        urllib.request.install_opener(opener)
+        # proxy_url = "@proxy-sgt.si.socgen:8080"
+        # proxy = {"https": "https://" + self.user + ":" + self.pwd + proxy_url}
+        # proxy_support = urllib.request.ProxyHandler(proxy)
+        # opener = urllib.request.build_opener(proxy_support)
+        # urllib.request.install_opener(opener)
 
     def __get_qs_norm(self,text):
         '''Function fetches all qs associated with the given string in the given sites
+
+        we have two options:
+        1. either the q that we get is already of a desired type, then we just add it
+        2. or the q that we get is a disambiguation page. In this case we will need to check if this 
+        page points toward one of Qs that we are interested in
+        
         Args:
                 string: string to be searched for
                 url: url used inthe search query
                 sites: wiki sites to be used
-        returns:
+        
+        Returns:
                 list of Q....
         '''
         for site in self.sites:
@@ -141,7 +152,7 @@ class Synonyms_finder(Thread):
                                 "action" : "wbgetentities",
                                 "sites" : site,
                                 "titles": text,
-                                "props" : "descriptions|claims",
+                                "props" : "claims",
                                 "normalize" : 1,
                                 "format": "json"
                 },)
@@ -149,7 +160,6 @@ class Synonyms_finder(Thread):
                 url = f"{self.url}?{params}"
                 response = fetch_url(url)
                 result = json.load(response)
-                
                 #check if we have a match
                 if "entities" in result:
                         for el in result["entities"]:
@@ -157,6 +167,13 @@ class Synonyms_finder(Thread):
                                         #now, let's check that our element has a proper class (property P31):
                                         if self.__check_p31(result,el):
                                                 self.qs.append(el)
+
+                                        #now, let's check if our element has a disambiguation page
+                                        if self.__check_disambiguation_page(result,el):
+                                                self.__fetch_qs_from_disambiguation_page(self,el)
+        
+        #once we are done, let's get rid of all duplicates in our list
+        self.qs = list(set(self.qs))
 
         return self.qs
 
@@ -180,6 +197,76 @@ class Synonyms_finder(Thread):
                                 match = True
         return match
 
+    def __check_disambiguation_page(self,result,q):
+        '''function checks if a provided q is a disambiguation page
+
+        Args:
+                result: json list containing output from wikidata
+                q: q that we are looking for
+
+        Returns:
+                a boolean indicatin whetehr the given q has is a disambiguation page
+        '''
+        match = False
+        entity = result["entities"][q]
+
+        if "P31" in entity["claims"]:
+                for instance in entity["claims"]["P31"]:
+                        if instance["mainsnak"]["datavalue"]["value"]["id"] == "Q4167410":
+                                match = True
+
+        return match
+
+    def __fetch_qs_from_disambiguation_page(self,result,q):
+        '''function checks the disambiguation page, searches if it points to any name (member of self.instances)
+        if yes, it adds all name instances into the list
+
+        Args:
+                q: Q of the disambiguation page
+        Returns:
+        '''
+        params = urllib.parse.urlencode({
+                        "action" : "wbgetentities",
+                        "sites" : "enwiki",
+                        "ids": q,
+                        "props" : "claims",
+                        "normalize" : 1,
+                        "format": "json"
+        },)
+
+        url = f"{self.url}?{params}"
+        response = fetch_url(url)
+        result = json.load(response)
+
+        #if the result is not empty
+        if "entities" in result:
+                #let's check claims that P1889 is among the claims
+                #P1889 stands for "different from"
+                entity = result["entities"][q]
+                for claim_id, claim_value in entity["claims"].items():
+                        if claim_id == "P1889":
+                                for el in claim_value:
+                                        #for every claim, we need to check its status.
+                                        #wheter it is in our wishlist
+                                        _id = el["mainsnak"]["datavalue"]["value"]["id"]
+
+                                        #in order to save requests, let's check if this _id has already been added
+                                        if _id in self.qs:
+                                               pass
+                                        else: 
+                                                _params = urllib.parse.urlencode({
+                                                        "action" : "wbgetentities",
+                                                        "sites" : "enwiki",
+                                                        "ids": _id,
+                                                        "props" : "claims",
+                                                        "normalize" : 1,
+                                                        "format": "json"
+                                                })
+                                                _result = json.load(fetch_url(f"{self.url}?{_params}"))
+                                                #if the type is good, we keep it
+                                                if self.__check_p31(_result,_id):
+                                                        self.qs.append(_id)
+
     def __get_alias(self,q):
         '''Function gets alias names for qs
         Args:
@@ -199,14 +286,20 @@ class Synonyms_finder(Thread):
         alias_res = json.load(response)
 
         alias_list = []
+        #also known property
         if "P460" in alias_res["entities"][q]["claims"]:
                 claims = alias_res["entities"][q]["claims"]["P460"]
                 for link in claims:
                         alias_list.append(link["mainsnak"]["datavalue"]["value"]["id"])
-
-                return {q:alias_list}
+        #different from property
+        elif "P1889" in alias_res["entities"][q]["claims"]:
+                claims = alias_res["entities"][q]["claims"]["P1889"]
+                for link in claims:
+                        alias_list.append(link["mainsnak"]["datavalue"]["value"]["id"])
         else:
                 return {q:None}
+
+        return {q:alias_list}
 
     def __normalize_label(self,label):
         '''Function normalizes label:
@@ -251,55 +344,21 @@ class Synonyms_finder(Thread):
                 else:
                         labels.append(label)
 
-        return {q: list(set(labels))}
-
-    def __get_alias(self,q):
-        '''Function gets alias names for qs
-        Args:
-                qs: list of qs to be searched
-                url: url to be used in the search
-
-        Returns:
-                list of names located in P460
-        '''
-        params = urllib.parse.urlencode({
-                "action":"wbgetentities",
-                "ids":q,#"|".join([q,"P460"]),
-                "props":"info|claims",
-                "format":"json"
-        })
-
-        url = f"{self.url}?{params}"
-        response = fetch_url(url)
-        alias_res = json.load(response)
-
-        alias_list = []
-        if "P460" in alias_res["entities"][q]["claims"]:
-                claims = alias_res["entities"][q]["claims"]["P460"]
-                for link in claims:
-                        alias_list.append(link["mainsnak"]["datavalue"]["value"]["id"])
-
-                return {q:alias_list}
-        else:
-                return {q:None}
+        return {q: sorted(set(labels))}
 
 
 def load_data(path,debug=True):
         '''Function loads data from the given path
         '''
-        original = pd.read_csv(path,sep=";")
-        original[["surname","name"]] = original.bg_name.str.split(', ',expand=True)
-        original["name_split"] = original.name.str.split(" ")
-        original["surname_split"] = original.surname.str.split(" ")
-        if debug:
-                print(original.shape)
-                print(original.head())
-        return original
+        data = pd.read_csv(path,sep=",")
+        data = data[["governor"]].drop_duplicates()
+        data["governor_split"] = data.governor.str.split(" ")
+        return data
 
 
 def get_unique_names(original, col):
         '''gets unique values of a given column that are in all sub elements of this column'''
-        return_seq = list(original[[col+"_split"]].explode(col+"_split").drop_duplicates()[col+"_split"])
+        return_seq = sorted(original[[col]].explode(col).drop_duplicates()[col])
         return return_seq
 
 
@@ -324,20 +383,16 @@ if __name__ == "__main__":
         # maximumNumberOfThreads = 30
         # threadLimiter = BoundedSemaphore(maximumNumberOfThreads)
 
-        # original = load_data(".\\notebooks\\wikidata\\data\\bg_names.csv")
-        # unique_names = get_unique_names(original,"name")
-        # unique_surnames = get_unique_names(original,"surname")
-        # print(len(unique_names),len(unique_surnames))
+        # original = load_data("data\\source\\united_states_governors.csv")
+
+        # unique_names = get_unique_names(original,"governor_split")
+        # print(len(unique_names))
 
         # names_dict = parse_names(unique_names)
-        # with open(".\\notebooks\\wikidata\\data\\dict\\names.json", "w",encoding="utf-8") as file:
+        # with open("data\\dict\\names.json", "w",encoding="utf-8") as file:
         #         file.write(json.dumps(names_dict,indent=2))
 
-        # surnames_dict = parse_names(unique_surnames)
-        # with open(".\\notebooks\\wikidata\\data\\dict\\surnames.json", "w",encoding="utf-8") as file:
-        #         file.write(json.dumps(surnames_dict,indent=2))
-
-        name = "Sharkov"
+        name = "julia"
         syn = Synonyms_finder(name)
         syn.fit()
         print(syn)

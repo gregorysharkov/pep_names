@@ -1,22 +1,11 @@
 import re
 import json
 import random
-from random import sample
-import pandas as pd
+#from random import sample
+#import pandas as pd
 import unicodedata as ud
 from itertools import product, permutations
-
-def load_data(path,debug=True):
-    '''Function loads data from a given path
-    '''
-    original = pd.read_csv(path,sep=";")
-    original[["surname","name"]] = original.bg_name.str.split(', ',expand=True)
-    original["name_split"] = original.name.str.split(" ")
-    original["surname_split"] = original.surname.str.split(" ")
-    if debug:
-            print(original.shape)
-            print(original.head())
-    return original
+from fetch_wikidata import load_data
 
 latin_letters= {}
 def is_latin(uchr):
@@ -98,17 +87,17 @@ def sample_permutations(name_list,combined_dict,n_samples,n_permutations):
             selected_combinations = random.sample(selected_synonyms_permutations,n_permutations)
 
         selected_strings = [" ".join(x) for x in selected_combinations]
+        selected_strings = [x.lower() for x in selected_strings]
         final_selection = list(set([*final_selection,*selected_strings]))
 
     return final_selection
 
 
-def generate_combinations(name,surname,combined_dict,n_samples,n_permutations):
+def generate_combinations(name,combined_dict,n_samples,n_permutations):
     '''Function generates permutations between name and surname
 
     Args:
         name: list of words that a name contains
-        surname: list of words that a surname contains
         combined_dict: dictionary of synonyms
         n_samples: number of different synonyms to be used for each word
         n_permutations: number of permutations to be taken from all combinations
@@ -116,15 +105,14 @@ def generate_combinations(name,surname,combined_dict,n_samples,n_permutations):
     Returns:
         list of combined strings created based on permutations of the name and the surname
     '''
+    #generate samples
     names = sample_permutations(name,combined_dict,n_samples,n_permutations)
-    surnames = sample_permutations(surname,combined_dict,n_samples,n_permutations)
+    
+    #add name and the inverse name in the samples list
+    names.append(" ".join(name).lower())
+    names.append(" ".join(name[::-1]).lower())
 
-    #two sided combinations
-    combined = list(map(list,product(names,surnames))) + list(map(list,product(surnames,names)))
-    combined = [", ".join(x) for x in combined]
-    combined = [re.sub(r"(^, )|(, $)","",x) for x in combined]
-
-    return combined
+    return names
 
 def generate_output(original,combined_dict,n_samples,n_permutations):
     '''Function processes a dataset with combined dictionary
@@ -142,53 +130,35 @@ def generate_output(original,combined_dict,n_samples,n_permutations):
             * match: equal to 1 since these permutations are a true match (for training purposes)
     '''
     combinations = []
-    for name,surname in zip(original.name_split, original.surname_split):
-        combination = generate_combinations(name,surname,combined_dict,n_samples,n_permutations)
+    for name in original.governor_split:
+        combination = generate_combinations(name,combined_dict,n_samples,n_permutations)
         combinations.append(combination)
 
     original["combinations"] = combinations
     output_dataset = original.\
         explode("combinations").\
-        drop_duplicates(subset=["bg_name","combinations"]).\
-        sort_values(by=["bg_name","combinations"])\
-        [["bg_name","combinations"]]
+        drop_duplicates(subset=["governor","combinations"]).\
+        sort_values(by=["governor","combinations"])\
+        [["governor","combinations"]]
     
     output_dataset["match"] = 1
     return output_dataset
 
 if __name__ == "__main__":
-    path = ".\\notebooks\\wikidata\\data\\dict\\"
+    path = "data\\dict\\"
     with open(path+"names.json", encoding="utf-8") as f:
         names = json.load(f)
 
-    with open(path+"surnames.json", encoding="utf-8") as f:
-        surnames = json.load(f)
-
-    names.update(surnames)
     combined_dict = names
 
-    original = load_data(".\\notebooks\\wikidata\\data\\bg_names.csv",False).head(500)
-    n_samples = 15
-    n_permutations = 20
-    output_dataset = generate_output(original,combined_dict,n_samples,n_permutations)    
+    original = load_data("data\\source\\united_states_governors.csv")
+
+    n_samples = 10
+    n_permutations = 30
+
+    output_dataset = generate_output(original,combined_dict,n_samples,n_permutations) 
+    output_dataset.governor = output_dataset.governor.str.lower()
     print(output_dataset.head(30))
     print(output_dataset.shape)
 
-    output_dataset.to_csv(f".\\notebooks\\\wikidata\\data\\combinations\\bg_true_match.csv",sep=";",header=True,index=False)
-
-
-#     for i in range(len(original)//batch_size):
-#         combinations = []
-#         batch = original.iloc[start:start+batch_size]
-#         for name,surname in zip(batch.name_split,batch.surname_split):
-#             print(f"Name, Surname:\t{name}, {surname}")
-#             combination = generate_combinations(name,surname,combined_dict,n_samples,n_permutations)
-#             print(f"Combinations:\t{combination}")
-#             combinations.append(combination)
-
-#         batch["combinations"] = combinations
-# #        batch.to_csv(f".\\notebooks\\\wikidata\\data\\combinations\\batch_{i}.csv",sep=";",header=True,index=False)
-#         print(f"Done with batch {i}")
-#         start += batch_size
-
-#print(original.loc[:10,["name_split","surname_split"]].apply(lambda x: generate_combinations(*x,combined_dict), axis=1))
+    output_dataset.to_csv(f"data\\combinations\\governors_true_match.csv",sep=";",header=True,index=False)
