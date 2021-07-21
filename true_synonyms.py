@@ -1,8 +1,6 @@
 import re
 import json
 import random
-#from random import sample
-#import pandas as pd
 import unicodedata as ud
 from itertools import permutations
 from utils import load_data
