@@ -347,15 +347,6 @@ class Synonyms_finder(Thread):
         return {q: sorted(set(labels))}
 
 
-def load_data(path,debug=True):
-        '''Function loads data from the given path
-        '''
-        data = pd.read_csv(path,sep=",")
-        data = data[["governor"]].drop_duplicates()
-        data["governor_split"] = data.governor.str.split(" ")
-        return data
-
-
 def get_unique_names(original, col):
         '''gets unique values of a given column that are in all sub elements of this column'''
         return_seq = sorted(original[[col]].explode(col).drop_duplicates()[col])
