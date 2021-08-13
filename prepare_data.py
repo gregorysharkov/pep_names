@@ -44,6 +44,9 @@ if __name__ == "__main__":
     CONFIG.rate_drop_dense = siamese_config['RATE_DROP_DENSE']
     CONFIG.validation_split_ratio = siamese_config['VALIDATION_SPLIT']
 
-    siamese = SiameseBiLSTM(CONFIG.embedding_dim , CONFIG.max_sequence_length, CONFIG.number_lstm_units , CONFIG.number_dense_units, CONFIG.rate_drop_lstm, CONFIG.rate_drop_dense, CONFIG.activation_function, CONFIG.validation_split_ratio)
+    # siamese = SiameseBiLSTM(CONFIG.embedding_dim, CONFIG.max_sequence_length, 
+    #                         CONFIG.number_lstm_units , CONFIG.number_dense_units, 
+    #                         CONFIG.rate_drop_lstm, CONFIG.rate_drop_dense, 
+    #                         CONFIG.activation_function, CONFIG.validation_split_ratio)
 
-    best_model_path = siamese.train_model(names_pair, is_similar, embedding_meta_data, model_save_directory='./')
+    # best_model_path = siamese.train_model(names_pair, is_similar, embedding_meta_data, model_save_directory='./')

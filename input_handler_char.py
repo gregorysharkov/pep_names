@@ -4,10 +4,25 @@ from gensim.models import Word2Vec
 import numpy as np
 import gc
 
+class Embedder():
+    documents: list[str]
+    embedding_dim : int
+    tokenizer: Tokenizer
+#    char_vectors: Word2Vec
 
-def train_word2vec(documents, embedding_dim):
+    def __init__(self,documents,embedding_dim):
+        self.documents = documents
+        self.embedding_dim = embedding_dim
+
+    def set_tokenizer(self):
+        documents = [[ch for ch in x.lower()] for x in self.documents]
+        tokenizer = Tokenizer(char_level=True)
+        tokenizer.fit_on_texts(documents)
+        self.tokenizer = tokenizer
+
+def train_char2vec(documents, embedding_dim):
     """
-    train word2vector over traning documents
+    train char2vector over traning documents
     Args:
         documents (list): list of document
         embedding_dim (int): outpu wordvector size
@@ -17,7 +32,6 @@ def train_word2vec(documents, embedding_dim):
     model = Word2Vec(documents, min_count=1, vector_size=embedding_dim)
     word_vectors = model.wv
     del model
-    print(documents)
     return word_vectors
 
 
@@ -45,7 +59,7 @@ def create_embedding_matrix(tokenizer, word_vectors, embedding_dim):
     return embedding_matrix
 
 
-def word_embed_meta_data(documents, embedding_dim):
+def char_embed_meta_data(documents, embedding_dim):
     """
     Load tokenizer object for given vocabs list
     Args:
@@ -55,9 +69,10 @@ def word_embed_meta_data(documents, embedding_dim):
         tokenizer (keras.preprocessing.text.Tokenizer): keras tokenizer object
         embedding_matrix (dict): dict with word_index and vector mapping
     """
-    documents = [x.lower().split() for x in documents]
+    documents = [[ch for ch in x.lower()] for x in documents]
     tokenizer = Tokenizer()
     tokenizer.fit_on_texts(documents)
+    print(tokenizer.word_index)
 
     word_vector = train_word2vec(documents, embedding_dim)
     embedding_matrix = create_embedding_matrix(tokenizer, word_vector, embedding_dim)
