@@ -3,7 +3,7 @@ from tensorflow.keras.layers import Embedding, Input, Conv1D, Dense,Dropout, Act
 from tensorflow.python.framework.func_graph import convert_structure_to_signature
 
 
-class Char_level_CNN(tf.keras.Model):
+class Char_level_cnn(tf.keras.Model):
     def __init__(self,input_size,vocab_size,embed_size,embedding_weights,conv_layers,fully_connected_layers,dropout_p,**kwargs):
         """
         Args:

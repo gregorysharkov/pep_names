@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Embedding, Input, Conv1D, Dense,Dropout, Activation, MaxPooling1D, Flatten, GRU
+from tensorflow.keras.layers import Embedding, Dense, GRU
 
 class Char_level_rnn(tf.keras.Model):
 

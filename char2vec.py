@@ -8,8 +8,9 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input
 
-from char_level_cnn import Char_level_CNN
+from char_level_cnn import Char_level_cnn
 from char_level_rnn import Char_level_rnn
+from char_level_bidirectional_rnn import Char_level_bidirectional
 
 path = "data\\combinations\\"
 true_data = pd.read_csv(path+"governors_true_match.csv",sep=";")
@@ -96,22 +97,27 @@ optimizer = "adam"
 loss = "categorical_crossentropy"
 
 
-
+model = Char_level_bidirectional(
+    vocab_size,
+    embed_size,
+    10
+)
 
 #inputs = Input(shape=(input_size,), name="input", dtype="int64")
 
-model = Char_level_CNN(
-    input_size,
-    vocab_size,
-    embed_size,
-    embedding_weights,
-    conv_layers,
-    fully_connected_layers,
-    dropout_p,
-)
+# model = Char_level_cnn(
+#     input_size,
+#     vocab_size,
+#     embed_size,
+#     embedding_weights,
+#     conv_layers,
+#     fully_connected_layers,
+#     dropout_p,
+# )
 
 #model = Char_level_rnn(vocab_size,256,input_size)
 model.compile(optimizer=optimizer, loss=loss, metrics = ["accuracy"])
+# print(model.summary())
 model.fit(
     train_features,
     train_classes,
@@ -120,7 +126,7 @@ model.fit(
     epochs=500,
     verbose=2,
 )
-#
+
 
 # #initialize embedding layer
 # embedding_layer = Embedding(
@@ -128,42 +134,4 @@ model.fit(
 #     embed_size,
 #     input_length=input_size,
 #     weights=[embedding_weights]
-# )
-
-# #define the model
-# #intput
-# inputs = Input(shape=(input_size,), name="input", dtype="int64")
-# #embedding
-# x = embedding_layer(inputs)
-# #Convolution layers
-# for filter_num, filter_size, pooling_size,name in conv_layers:
-#     x = Conv1D(filter_num,filter_size, name=name)(x)
-#     x = Activation("relu")(x)
-#     if pooling_size!=-1:
-#         x = MaxPooling1D(pool_size=pooling_size)(x)
-
-# x = Flatten()(x)
-
-# #Fully connected layers
-# for dense_size in fully_connected_layers:
-#     x = Dense(dense_size, activation="relu")(x)
-#     x = Dropout(dropout_p)(x)
-
-# #output layers
-# predictions = Dense(num_of_classes,activation="softmax")(x)
-
-# #build the model
-# model = Model(inputs=inputs, outputs=predictions)
-# model.compile(optimizer=optimizer, loss=loss, metrics = ["accuracy"])
-# #print(model.summary())
-
-#print(train_features.shape,train_classes.shape)
-
-# model.fit(
-#     train_features,
-#     train_classes,
-#     validation_steps=(test_features,test_classes),
-#     batch_size=256,
-#     epochs=1000,
-#     verbose=2,
 # )
