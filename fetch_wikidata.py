@@ -8,7 +8,7 @@ from threading import *
 from time import *
 import time
 import pandas as pd
-
+from utils import load_data
 
 def fetch_url(url):
         current_delay=.1 #set the initial retry delay to 100 ms
@@ -371,19 +371,19 @@ def parse_names(names):
         
 
 if __name__ == "__main__":
-        # maximumNumberOfThreads = 30
-        # threadLimiter = BoundedSemaphore(maximumNumberOfThreads)
+        maximumNumberOfThreads = 30
+        threadLimiter = BoundedSemaphore(maximumNumberOfThreads)
 
-        # original = load_data("data\\source\\united_states_governors.csv")
+        original = load_data("data\\source\\united_states_governors.csv")
 
-        # unique_names = get_unique_names(original,"governor_split")
-        # print(len(unique_names))
+        unique_names = get_unique_names(original,"governor_split")
+        print(len(unique_names))
 
-        # names_dict = parse_names(unique_names)
-        # with open("data\\dict\\names.json", "w",encoding="utf-8") as file:
-        #         file.write(json.dumps(names_dict,indent=2))
+        names_dict = parse_names(unique_names)
+        with open("data\\dict\\names.json", "w",encoding="utf-8") as file:
+                file.write(json.dumps(names_dict,indent=2))
 
-        name = "julia"
-        syn = Synonyms_finder(name)
-        syn.fit()
-        print(syn)
+        # name = "julia"
+        # syn = Synonyms_finder(name)
+        # syn.fit()
+        # print(syn)
