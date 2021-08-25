@@ -64,20 +64,25 @@ class InnerModel(tf.keras.Model):
         self.input_embedding = settings.input_embedding
 
         self.embedding = tf.keras.layers.Embedding(self.input_embedding+1,self.n_embedding_dims,name="inner_embedding")
+        self.dense_embedding = tf.keras.layers.Dense(self.n_embedding_dims*2, name="inner_dense_after_embedding")
+        self.dropout = tf.keras.layers.Dropout(.5)
         self.gru_1 = tf.keras.layers.GRU(self.n_gru,name="inner_gru_1",return_sequences=True)
         self.gru_2 = tf.keras.layers.GRU(self.n_gru,name="inner_gru_2",return_sequences=True, return_state=True)
         self.attention = Attention(self.n_units_attention)
         self.bi_gru_1 = tf.keras.layers.Bidirectional(self.gru_1,name="inner_bidirectional_1")
         self.bi_gru_2 = tf.keras.layers.Bidirectional(self.gru_2,name="inner_bidirectional_2")
+        self.normalizer = tf.keras.layers.BatchNormalization()
         self.dense = tf.keras.layers.Dense(self.n_dense,name="inner_dense")
     
     def call(self, x, training=False):
         embedded_strings = self.embedding(x,training=training)
-        #x = self.bi_gru(x,training=training)
+        embedded_strings = self.dense_embedding(embedded_strings, training=training)
+        embedded_strings = self.dropout(embedded_strings, training=training)
         after_bigru = self.bi_gru_1(embedded_strings,training=training)
         (bigru_output, state_h, state_c) = self.bi_gru_2(after_bigru, training=training)
         context_vector = self.attention(bigru_output,state_h)
-        final_embedding = self.dense(context_vector,training=training)
+        context_normalized = self.normalizer(context_vector,training=training)
+        final_embedding = self.dense(context_normalized,training=training)
 
         return self.dense(final_embedding)
 
