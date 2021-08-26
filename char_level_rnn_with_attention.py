@@ -65,7 +65,7 @@ class InnerModel(tf.keras.Model):
 
         self.embedding = tf.keras.layers.Embedding(self.input_embedding+1,self.n_embedding_dims,name="inner_embedding")
         self.dense_embedding = tf.keras.layers.Dense(self.n_embedding_dims*2, name="inner_dense_after_embedding")
-        self.dropout = tf.keras.layers.Dropout(.5)
+        self.dropout = tf.keras.layers.Dropout(.4)
         self.gru_1 = tf.keras.layers.GRU(self.n_gru,name="inner_gru_1",return_sequences=True)
         self.gru_2 = tf.keras.layers.GRU(self.n_gru,name="inner_gru_2",return_sequences=True, return_state=True)
         self.attention = Attention(self.n_units_attention)
@@ -117,7 +117,8 @@ class OuterModel(tf.keras.Model):
         self.repr_b = self.inner_model(input_b, training=training)
         self.cosine_similarity = self.distance_layer(self.repr_a,self.repr_b,training=training)
         #output = self.output_layer(tf.expand_dims(self.cosine_similarity,1))
-        return tf.expand_dims(self.cosine_similarity,1) #output
+        output = self.output_layer(tf.expand_dims(self.cosine_similarity,1))
+        return output
         # self.output_layer(tf.reshape(self.cosine_similarity,shape=(1,len(self.cosine_similarity))), training=training) #self.output_layer(self.cosine_similarity,training=training)
 
 
