@@ -44,7 +44,7 @@ class DistanceLayer(tf.keras.layers.Layer):
         super().__init__(**kwargs)
 
     def call(self,input_a,input_b):
-        dist = ( 1-tf.keras.losses.cosine_similarity(input_a,input_b) ) / 2
+        dist = ( 1-tf.keras.losses.cosine_similarity(input_a,input_b) ) / 2 #tf.keras.losses.cosine_similarity(input_a,input_b) 
         return dist #tf.reshape(dist,shape=(len(dist),-1))
 
 
@@ -65,13 +65,13 @@ class InnerModel(tf.keras.Model):
 
         self.embedding = tf.keras.layers.Embedding(self.input_embedding+1,self.n_embedding_dims,name="inner_embedding")
         self.dense_embedding = tf.keras.layers.Dense(self.n_embedding_dims*2, name="inner_dense_after_embedding")
-        self.dropout = tf.keras.layers.Dropout(.4)
+        self.dropout = tf.keras.layers.Dropout(.5)
         self.gru_1 = tf.keras.layers.GRU(self.n_gru,name="inner_gru_1",return_sequences=True)
         self.gru_2 = tf.keras.layers.GRU(self.n_gru,name="inner_gru_2",return_sequences=True, return_state=True)
         self.attention = Attention(self.n_units_attention)
         self.bi_gru_1 = tf.keras.layers.Bidirectional(self.gru_1,name="inner_bidirectional_1")
         self.bi_gru_2 = tf.keras.layers.Bidirectional(self.gru_2,name="inner_bidirectional_2")
-        self.normalizer = tf.keras.layers.BatchNormalization()
+        self.normalizer = tf.keras.layers.BatchNormalization(name="inner_normalizer")
         self.dense = tf.keras.layers.Dense(self.n_dense,name="inner_dense")
     
     def call(self, x, training=False):
@@ -96,11 +96,11 @@ class OuterModel(tf.keras.Model):
     """
     def __init__(self, settings: InnerModelSettings):
         super().__init__()
-        print(settings.input_embedding)
 
         #layers
         self.inner_model = InnerModel(settings)
         self.distance_layer = DistanceLayer()
+#        self.normalizer = tf.keras.layers.BatchNormalization(name="final_normalizer")
         self.output_layer = tf.keras.layers.Dense(1, activation="sigmoid",name="output_layer")
 
         #learned representations
@@ -117,7 +117,7 @@ class OuterModel(tf.keras.Model):
         self.repr_b = self.inner_model(input_b, training=training)
         self.cosine_similarity = self.distance_layer(self.repr_a,self.repr_b,training=training)
         #output = self.output_layer(tf.expand_dims(self.cosine_similarity,1))
-        output = self.output_layer(tf.expand_dims(self.cosine_similarity,1))
+        output = self.output_layer(tf.expand_dims(self.cosine_similarity,1),training=training)
         return output
         # self.output_layer(tf.reshape(self.cosine_similarity,shape=(1,len(self.cosine_similarity))), training=training) #self.output_layer(self.cosine_similarity,training=training)
 
