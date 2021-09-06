@@ -1,7 +1,7 @@
 import tensorflow as tf
 import pandas as pd
 import numpy as np
-from inner_model_settings import InnerModelSettings
+from model_settings import InnerModelSettings
 
 #custom layers
 class Attention(tf.keras.Model):
@@ -44,8 +44,10 @@ class DistanceLayer(tf.keras.layers.Layer):
         super().__init__(**kwargs)
 
     def call(self,input_a,input_b):
-        dist = ( 1-tf.keras.losses.cosine_similarity(input_a,input_b) ) / 2 #tf.keras.losses.cosine_similarity(input_a,input_b) 
-        return dist #tf.reshape(dist,shape=(len(dist),-1))
+        dist = tf.math.abs(tf.keras.losses.cosine_similarity(input_a,input_b))
+        #( 1-tf.keras.losses.cosine_similarity(input_a,input_b) ) / 2
+        #tf.math.abs(tf.keras.slosses.cosine_similarity(input_a,input_b))
+        return (dist)
 
 
 # inner model with attention
@@ -76,7 +78,6 @@ class InnerModel(tf.keras.Model):
     
     def call(self, x, training=False):
         embedded_strings = self.embedding(x,training=training)
-        embedded_strings = self.dense_embedding(embedded_strings, training=training)
         embedded_strings = self.dropout(embedded_strings, training=training)
         after_bigru = self.bi_gru_1(embedded_strings,training=training)
         (bigru_output, state_h, state_c) = self.bi_gru_2(after_bigru, training=training)
@@ -100,7 +101,6 @@ class OuterModel(tf.keras.Model):
         #layers
         self.inner_model = InnerModel(settings)
         self.distance_layer = DistanceLayer()
-#        self.normalizer = tf.keras.layers.BatchNormalization(name="final_normalizer")
         self.output_layer = tf.keras.layers.Dense(1, activation="sigmoid",name="output_layer")
 
         #learned representations
@@ -116,10 +116,9 @@ class OuterModel(tf.keras.Model):
         self.repr_a = self.inner_model(input_a, training=training)
         self.repr_b = self.inner_model(input_b, training=training)
         self.cosine_similarity = self.distance_layer(self.repr_a,self.repr_b,training=training)
-        #output = self.output_layer(tf.expand_dims(self.cosine_similarity,1))
+ #       return self.cosine_similarity # tf.expand_dims(self.cosine_similarity,1)
         output = self.output_layer(tf.expand_dims(self.cosine_similarity,1),training=training)
         return output
-        # self.output_layer(tf.reshape(self.cosine_similarity,shape=(1,len(self.cosine_similarity))), training=training) #self.output_layer(self.cosine_similarity,training=training)
 
 
     def train_step(self, data):
