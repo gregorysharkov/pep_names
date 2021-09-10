@@ -76,14 +76,30 @@ class InnerModel(tf.keras.Model):
         self.normalizer = tf.keras.layers.BatchNormalization(name="inner_normalizer")
         self.dense = tf.keras.layers.Dense(self.n_dense,name="inner_dense")
     
-    def call(self, x, training=False):
+    def call(self, x, training=False,echo=False):
         embedded_strings = self.embedding(x,training=training)
+        if echo:
+            print(f"Input shape: {x.shape}")
+            print(f"Input: {x}")
+            print(f"Shape after embedding: {embedded_strings.shape}")
+            print(f"After embedding: {embedded_strings}")
         embedded_strings = self.dropout(embedded_strings, training=training)
+        if echo:
+            print(f"Shape after dropout: {embedded_strings.shape}")
         after_bigru = self.bi_gru_1(embedded_strings,training=training)
+        if echo:
+            print(f"Shape after bi_gru: {after_bigru.shape}")
         (bigru_output, state_h, state_c) = self.bi_gru_2(after_bigru, training=training)
         context_vector = self.attention(bigru_output,state_h)
+        if echo:
+            print(f"Shape after attention: {context_vector.shape}")
         context_normalized = self.normalizer(context_vector,training=training)
+        if echo:
+            print(f"Shape after normalisation: {context_vector.shape}")
         final_embedding = self.dense(context_normalized,training=training)
+        if echo:
+            print(f"Final shape of inner embedding: {final_embedding.shape}")
+            print(f"Final shape of inner embedding_2: {self.dense(final_embedding).shape}")
 
         return self.dense(final_embedding)
 
@@ -109,12 +125,12 @@ class OuterModel(tf.keras.Model):
         self.cosine_similarity = 0
 
 
-    def call(self,inputs,training=False):
+    def call(self,inputs,training=False,echo=False):
         input_a = inputs[0]
         input_b = inputs[1]
 
-        self.repr_a = self.inner_model(input_a, training=training)
-        self.repr_b = self.inner_model(input_b, training=training)
+        self.repr_a = self.inner_model(input_a, training=training,echo=echo)
+        self.repr_b = self.inner_model(input_b, training=training,echo=echo)
         self.cosine_similarity = self.distance_layer(self.repr_a,self.repr_b,training=training)
  #       return self.cosine_similarity # tf.expand_dims(self.cosine_similarity,1)
         output = self.output_layer(tf.expand_dims(self.cosine_similarity,1),training=training)

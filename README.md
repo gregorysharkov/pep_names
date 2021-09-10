@@ -18,4 +18,11 @@ The next step is to create positive matches by using the original data and this 
   
 
 ## Seameese network
+The main idea is that we need a network that will be generating some representation of a string. We will feet two strings into this network, pass them both though this network, obtain two representations (one for each string) and them compare them with some measure. The final prediction will be a linear function of this similarity. The overall architecture is presented in the figure below:  
+![model_architecture](.\images\model_architecture.jpg)
+  
+I chose the following architecture for the inner model:
+![inner_model_architecture](.\images\inner_model_architecture.jpg)
+
+
 As a base model I will be using the approach proposed [here](https://github.com/amansrivastava17/lstm-siamese-text-similarity)
