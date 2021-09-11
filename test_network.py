@@ -1,24 +1,17 @@
-# import os
-# import datetime as datetime
-# import tensorflow as tf
-import pandas as pd
+import os
+import logging
+logging.getLogger('tensorflow').setLevel(logging.ERROR)
+os.environ["KMP_AFFINITY"] = "noverbose"
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+#import tensorflow as tf
+
 import numpy as np
 from tokenizer import load_tokenizer
 from instance_settings import inner_settings_1, outer_settings_1
 from utils_model import load_model_from_checkpoint,compare_strings
 
 np.set_printoptions(precision=4)
-
-# #load data
-# path = "data\\combinations\\"
-# true_data = pd.read_csv(path+"governors_true_match.csv",sep=";")
-# false_data = pd.read_csv(path+"governors_false_match.csv",sep=";")
-# combined_data = pd.concat([true_data,false_data])
-# combined_data = combined_data.sample(frac=1,random_state=20210826)
-
-# governors_list = list(combined_data.governor)
-# combination_list = list(combined_data.combinations)
-# match = list(combined_data.match)
 
 #load the tokenizer
 tk = load_tokenizer("output_model\\architecture_with_abs\\tokenizer.json")
@@ -33,7 +26,9 @@ model = load_model_from_checkpoint(
 #initialize and preprocess strings
 my_test = [
     ["Boris Jonson","Borya Jonson"],
-    ["Moris Jonson", "Boris Jonson"]
+    ["Moris Jonson", "Boris Jonson"],
+    ["Bill Clinton", "Bill Gates"],
+    ["Bill Clinton", "William Clinton"]
 ]
 
 for pair in my_test:
