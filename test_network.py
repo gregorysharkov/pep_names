@@ -6,7 +6,6 @@ import numpy as np
 
 from tokenizer import (
     load_tokenizer, 
-    preprocess_list
 )
 
 from model_settings import (
@@ -16,11 +15,11 @@ from model_settings import (
 )
 
 from utils_model import (
-    create_model,
     load_model_from_checkpoint,
-    compare_representations,
     compare_strings,
 )
+
+from instance_settings import inner_settings_1, outer_settings_1, fit_settings_1
 
 np.set_printoptions(precision=4)
 
@@ -39,27 +38,7 @@ match = list(combined_data.match)
 tk = load_tokenizer("output_model\\architecture_with_abs\\tokenizer.json")
 
 #set up settings
-inner_settings_1 = InnerModelSettings(
-    input_embedding = 129,
-    n_embedding_dims = 512,
-    n_gru = 40,
-    n_dense = 80,
-    n_units_attention=40
-)
 
-outer_settings_1 = OuterModelSettings(
-    loss = tf.keras.losses.BinaryCrossentropy(),
-    optimizer = tf.keras.optimizers.Adam(1e-4),
-    metrics = [tf.keras.metrics.BinaryAccuracy(name="accuracy"),
-               tf.keras.metrics.Precision(name="precision")]
-)
-
-fit_settings_1 = FitSettings(
-    batch_size = 1000,
-    epochs = 10,
-    verbose=2,
-    callbacks=[]
-)
 
 #load model
 model = load_model_from_checkpoint(
@@ -69,5 +48,10 @@ model = load_model_from_checkpoint(
 )
 
 #initialize and preprocess strings
-my_test = ["Boris Jonson","Borya Jonson"]
-compare_strings(my_test,tk,model,debug=True,give_representations=False,echo=False)
+my_test = [
+    ["Boris Jonson","Borya Jonson"],
+    ["Moris Jonson", "Boris Jonson"]
+]
+
+for pair in my_test:
+    compare_strings(pair,tk,model,debug=True,give_representations=False,echo=False)

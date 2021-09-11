@@ -158,8 +158,8 @@ def compare_strings(string_pair: list, tokenizer: Tokenizer, model: OuterModel, 
         output of the compare_representations function
     """
     seq = preprocess_list(string_pair, tokenizer)
-    debug = False if "debug" in kwargs else kwargs["debug"]
-    if debug:
-        print(f"Comparing '{string_pair[0]}' and '{string_pair[1]}'")
+    if "debug" in kwargs:
+        if kwargs["debug"]:
+            print(f"Comparing '{string_pair[0]}' and '{string_pair[1]}'")
 
     return compare_representations(seq[0],seq[1],model,**kwargs)
