@@ -5,7 +5,22 @@ import pandas as pd
 import numpy as np
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.utils import to_categorical
+#from tensorflow.keras.utils import to_categorical
+
+from tokenizer import (
+    train_tokenizer, 
+    load_tokenizer, 
+    save_tokenizer, 
+    preprocess_list
+)
+
+from model_settings import (
+    InnerModelSettings, 
+    OuterModelSettings, 
+    FitSettings
+)
+
+from char_level_rnn_with_attention import OuterModel
 
 np.set_printoptions(precision=4)
 
@@ -14,24 +29,12 @@ true_data = pd.read_csv(path+"governors_true_match.csv",sep=";")
 false_data = pd.read_csv(path+"governors_false_match.csv",sep=";")
 combined_data = pd.concat([true_data,false_data])
 combined_data = combined_data.sample(frac=1,random_state=20210826)
-names = sorted(set(list(combined_data.governor) + list(combined_data.combinations)))
-words = sorted(set(word for name in list(map(str.split,names)) for word in name))
-vocab = sorted(set(character for word in words for character in word))
 
 governors_list = list(combined_data.governor)
 combination_list = list(combined_data.combinations)
 match = list(combined_data.match)
 
-tk = Tokenizer(num_words=None, char_level=True, oov_token="UNK")
-tk.fit_on_texts(governors_list+combination_list)
-
-def preprocess_list(lst,tokenizer,max_len=None):
-    return_seq = tokenizer.texts_to_sequences(lst)
-    return np.array(pad_sequences(return_seq, maxlen=max_len,padding="post"),dtype="float32")
-
-
-from model_settings import InnerModelSettings, OuterModelSettings, FitSettings
-from char_level_rnn_with_attention import OuterModel
+tokenizer = load_tokenizer("output_model\\architecture_with_abs\\tokenizer.json")
 
 def create_model(inner_settings:InnerModelSettings,outer_settings:OuterModelSettings):
     model = OuterModel(inner_settings)

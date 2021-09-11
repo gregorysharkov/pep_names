@@ -82,7 +82,6 @@ class InnerModel(tf.keras.Model):
             print(f"Input shape: {x.shape}")
             print(f"Input: {x}")
             print(f"Shape after embedding: {embedded_strings.shape}")
-            print(f"After embedding: {embedded_strings}")
         embedded_strings = self.dropout(embedded_strings, training=training)
         if echo:
             print(f"Shape after dropout: {embedded_strings.shape}")
