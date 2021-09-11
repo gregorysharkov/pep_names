@@ -131,7 +131,6 @@ class OuterModel(tf.keras.Model):
         self.repr_a = self.inner_model(input_a, training=training,echo=echo)
         self.repr_b = self.inner_model(input_b, training=training,echo=echo)
         self.cosine_similarity = self.distance_layer(self.repr_a,self.repr_b,training=training)
- #       return self.cosine_similarity # tf.expand_dims(self.cosine_similarity,1)
         output = self.output_layer(tf.expand_dims(self.cosine_similarity,1),training=training)
         return output
 
