@@ -22,6 +22,6 @@ The main idea is that we need a network that will be generating some representat
 ![model_architecture](./images/model_architecture.jpg)
   
 I chose the following architecture for the inner model:
-![inner_model_architecture](./images/inner_model_architecture.jpg)
+![inner_model_architecture](./images/inner_model.jpg)
 
 As a base model I will be using the approach proposed [here](https://github.com/amansrivastava17/lstm-siamese-text-similarity)
