@@ -22,7 +22,7 @@ The next step is to create positive matches by using the original data and this 
 ## Synomyms finder
 ### Concept
 We are using [Wikidata](https://www.wikidata.org/wiki/Wikidata:Main_Page) to search alternative spellings of names. Wiki is a collaboratively edited multilingual knowledge graph hosted by the Wikimedia Foundation. It is a common source of open data that Wikimedia projects such as Wikipedia, and anyone else, can use under the CC0 public domain license. This knowledge graph contains information between different terms. Each term has its unique identifier (Q...) that alows to build queries to the database.  
-Here is an example of a terms linked to San Francisco:
+Here is an example of how terms are linked to San Francisco:
 ![generic wikidata example](./images/san_francisco.svg)  
 In our case we are interested in names. Let's say we are looking for different spellings of name Julia. Here is an example some information we may obtain when looking for Julia in wikidata:
 ![julia_example](./images/julia_example.png)
@@ -109,6 +109,40 @@ Done with: George
 Done with: John
 names_dict contains 5 elements.
 Execution time: 64.48 sec
+```
+The final think will be to pass every word in every unique name in the gouvernor list trhough synonyms finder and obtain a large dictionary of synonyms stored in `data\dict\names.json`.
+## Training dataset
+Now that we have all the names synonyms set up we can move on to create the training dataset. We need a labeled dataset containing true matches and false matches. We will prepare each part separately.
+### True match
+For true match I have created a class `TrueSynonymsGenerator` which is responsible for generating and sampling of true permutations based on the provided name and the dictionary. In general, it does some cleaning, then splits the name into words, tries to search for alternatives for each of them and then generates permutations of these alternatives. This class has a method sample that samples from possible combinations (permutations) of words. If the number of samples is not provided, it takes all possible combinations.
+```python
+from true_combinations_generator import TrueSynonymsGenerator
+
+test_name = "Bill,. Gates Geferson"
+test_dict = {"Bill": ["William","Guillaume"]}
+
+test_gen = TrueSynonymsGenerator(test_name)
+test_gen.fit(test_dict)
+test_gen.sample()
+print(f"Number of all possible combinations: {len(test_gen.combinations)}")
+print(f"Number of selected combinations {len(test_gen.selected_combinations)}")
+print(repr(test_gen))
+```
+Output:
+```
+Number of all possible combinations: 18
+Number of selected combinations 18
+TrueSynonymsGenerator(
+    name='Bill,. Gates Geferson', 
+    clean_name='Bill Gates Geferson', 
+    name_split=['Bill', 'Gates', 'Geferson'], 
+    combinations=[
+        'William Gates Geferson', 'William Geferson Gates', 'Gates William Geferson', 'Gates Geferson William', 'Geferson William Gates', 'Geferson Gates William', 'Bill Gates Geferson', 'Bill Geferson Gates', 'Gates Bill Geferson', 'Gates Geferson Bill', 'Geferson Bill Gates', 'Geferson Gates Bill', 'Guillaume Gates Geferson', 'Guillaume Geferson Gates', 'Gates Guillaume Geferson', 'Gates Geferson Guillaume', 'Geferson Guillaume Gates', 'Geferson Gates Guillaume'
+    ], 
+    selected_combinations=[
+        'William Gates Geferson', 'William Geferson Gates', 'Gates William Geferson', 'Gates Geferson William', 'Geferson William Gates', 'Geferson Gates William', 'Bill Gates Geferson', 'Bill Geferson Gates', 'Gates Bill Geferson', 'Gates Geferson Bill', 'Geferson Bill Gates', 'Geferson Gates Bill', 'Guillaume Gates Geferson', 'Guillaume Geferson Gates', 'Gates Guillaume Geferson', 'Gates Geferson Guillaume', 'Geferson Guillaume Gates', 'Geferson Gates Guillaume'
+    ]
+)
 ```
 ## Seameese network
 The main idea is that we need a network that will be generating some representation of a string. We will feet two strings into this network, pass them both though this network, obtain two representations (one for each string) and them compare them with some measure. The final prediction will be a linear function of this similarity. The overall architecture is presented in the figure below:  
