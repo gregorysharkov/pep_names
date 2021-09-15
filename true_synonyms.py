@@ -16,12 +16,9 @@ def is_latin(uchr):
 
 def only_roman_chars(unistr):
     '''Cheks if the string contains only roman characters
+    isalpha suggested by John Machin
     '''
-    return all(is_latin(uchr)
-           for uchr in unistr
-           if uchr.isalpha()) # isalpha suggested by John Machin
-
-
+    return all(is_latin(uchr) for uchr in unistr if uchr.isalpha()) 
 def get_synonyms(key,dict,only_roman=True):
     '''Function creates a list of all synonyms of a given key
     the key is also included into the final list
@@ -117,14 +114,14 @@ def generate_output(original,combined_dict,n_samples,n_permutations):
     '''Function processes a dataset with combined dictionary
 
     Args:
-        original: the dataset to be processed. Should contain columns bg_name, name_split and surname_split
+        original: the dataset to be processed. Should contain column governor_split
         combined_dict: dictionary of synonyms
         n_samples: number of different synonyms to be used for each word
         n_permutations: number of permutations to be taken from all combinations
 
     Returns:
         a dataset containing 3 columns:
-            * bg_name: original name
+            * governor: original name
             * combinations: one of the combinations of the original name
             * match: equal to 1 since these permutations are a true match (for training purposes)
     '''

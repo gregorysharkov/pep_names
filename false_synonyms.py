@@ -27,6 +27,10 @@ if __name__ == "__main__":
     #drop empty values
     original = original.dropna()
     original = original[["governor","combinations","match"]]
+
+    original.governor = original.governor.str.lower()
+    original.combinations = original.combinations.str.lower()
+
     #save data
     original.to_csv("data\\combinations\\governors_false_match.csv",sep=";",index=False)
     print(original.head(30))
