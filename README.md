@@ -115,6 +115,9 @@ The final think will be to pass every word in every unique name in the gouvernor
 Now that we have all the names synonyms set up we can move on to create the training dataset. We need a labeled dataset containing true matches and false matches. We will prepare each part separately.
 ### True match
 For true match I have created a class `TrueSynonymsGenerator` which is responsible for generating and sampling of true permutations based on the provided name and the dictionary. In general, it does some cleaning, then splits the name into words, tries to search for alternatives for each of them and then generates permutations of these alternatives. This class has a method sample that samples from possible combinations (permutations) of words. If the number of samples is not provided, it takes all possible combinations.
+TrueSynonymsGenerator's structure is presented below:
+![TrueSynonymsGenerator](./images/positive_synonyms_generator.png)
+
 ```python
 from true_combinations_generator import TrueSynonymsGenerator
 
@@ -137,13 +140,28 @@ TrueSynonymsGenerator(
     clean_name='Bill Gates Geferson', 
     name_split=['Bill', 'Gates', 'Geferson'], 
     combinations=[
-        'William Gates Geferson', 'William Geferson Gates', 'Gates William Geferson', 'Gates Geferson William', 'Geferson William Gates', 'Geferson Gates William', 'Bill Gates Geferson', 'Bill Geferson Gates', 'Gates Bill Geferson', 'Gates Geferson Bill', 'Geferson Bill Gates', 'Geferson Gates Bill', 'Guillaume Gates Geferson', 'Guillaume Geferson Gates', 'Gates Guillaume Geferson', 'Gates Geferson Guillaume', 'Geferson Guillaume Gates', 'Geferson Gates Guillaume'
+        'William Gates Geferson', 'William Geferson Gates', 'Gates William Geferson', 
+        'Gates Geferson William', 'Geferson William Gates', 'Geferson Gates William', 
+        'Bill Gates Geferson', 'Bill Geferson Gates', 'Gates Bill Geferson', 
+        'Gates Geferson Bill', 'Geferson Bill Gates', 'Geferson Gates Bill', 
+        'Guillaume Gates Geferson', 'Guillaume Geferson Gates', 
+        'Gates Guillaume Geferson', 'Gates Geferson Guillaume', 
+        'Geferson Guillaume Gates', 'Geferson Gates Guillaume'
     ], 
     selected_combinations=[
-        'William Gates Geferson', 'William Geferson Gates', 'Gates William Geferson', 'Gates Geferson William', 'Geferson William Gates', 'Geferson Gates William', 'Bill Gates Geferson', 'Bill Geferson Gates', 'Gates Bill Geferson', 'Gates Geferson Bill', 'Geferson Bill Gates', 'Geferson Gates Bill', 'Guillaume Gates Geferson', 'Guillaume Geferson Gates', 'Gates Guillaume Geferson', 'Gates Geferson Guillaume', 'Geferson Guillaume Gates', 'Geferson Gates Guillaume'
+        'William Gates Geferson', 'William Geferson Gates', 'Gates William Geferson', 
+        'Gates Geferson William', 'Geferson William Gates', 'Geferson Gates William', 
+        'Bill Gates Geferson', 'Bill Geferson Gates', 'Gates Bill Geferson', 
+        'Gates Geferson Bill', 'Geferson Bill Gates', 'Geferson Gates Bill', 
+        'Guillaume Gates Geferson', 'Guillaume Geferson Gates', 'Gates Guillaume Geferson', 
+        'Gates Geferson Guillaume', 'Geferson Guillaume Gates', 'Geferson Gates Guillaume'
     ]
 )
 ```
+
+### False match
+Generation of false matches is much simpler. We simply split the name into words and search for other names containing at least one of the words from the original name. Full matches are excluded.
+![FalseSynonymsGenerator](./images/negative_synonyms_generator.png)
 ## Seameese network
 The main idea is that we need a network that will be generating some representation of a string. We will feet two strings into this network, pass them both though this network, obtain two representations (one for each string) and them compare them with some measure. The final prediction will be a linear function of this similarity. The overall architecture is presented in the figure below:  
 ![model_architecture](./images/model_architecture.jpg)
