@@ -1,7 +1,13 @@
 import urllib
+import urllib.request
 from time import sleep
 
 def fetch_url(url):
+        """
+        The function is responsible for fetching a url and getting the response
+        if we encouter a URL error or an HTTP error, it waits for some time
+        and retries the request until several attempts have failed
+        """
         current_delay=.1 #set the initial retry delay to 100 ms
         max_delay=10     #set maximum retry delay to 10 seconds
         while True:
