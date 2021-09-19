@@ -1,6 +1,8 @@
 import urllib
 import urllib.request
 from time import sleep
+from dataclasses import dataclass
+from abc import ABC, abstractmethod
 
 def fetch_url(url):
         """
@@ -33,3 +35,51 @@ def fetch_url(url):
                 print("Waiting", current_delay, "seconds before retrying url: ",url)
                 sleep(current_delay)
                 current_delay *=2
+
+
+class abstract_param(ABC):
+        base_url:str="https://www.wikidata.org/w/api.php"
+        
+        def encode(self):
+                return f"{self.base_url}?{urllib.parse.urlencode(self._get_param())}"
+
+        @abstractmethod
+        def _get_param(self) -> dict:
+                pass
+
+@dataclass
+class TitleRequestParam(abstract_param):
+    """The class that is responsible for generation of an url for wikidata using a title"""
+    site:str
+    title:str
+
+    def _get_param(self):
+        return {
+            "action":"wbgetentities",
+            "sites":self.site,
+            "titles":self.title,
+            "format":"json",
+            "props":"info|claims|labels",
+            "normalize":1,
+        }
+
+@dataclass
+class IdRequestParam(abstract_param):
+    site:str
+    id:str
+
+    def _get_param(self):
+        return {
+            "action":"wbgetentities",
+            "sites":self.site,
+            "ids":self.id,
+            "format":"json",
+            "props":"info|claims|labels",
+        }
+
+
+if __name__=="__main__":
+        title_param = TitleRequestParam("enwiki","Julia")
+        print(title_param.encode())
+        id_param = IdRequestParam("enwiki","Q2737173")
+        print(id_param.encode())
