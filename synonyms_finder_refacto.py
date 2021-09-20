@@ -101,7 +101,11 @@ class WikiItemsGroup():
     results: list[WikiDataItem] = field(default_factory=list)
 
     def __add__(self,other):
-        '''function handles combination of two wikiitems group'''
+        '''
+        function handles combination of two wikiitems group
+        we need this function to handle cases when we need to combine two
+        groups together
+        '''
         # first, let's combine ids and names
         if (self.name is None) and (other.name is None):
             self.name = None
@@ -115,15 +119,19 @@ class WikiItemsGroup():
         elif self.id is None:
             self.id = other.id
         else:
-            self.id = [self.id, other.id]
-
+            if isinstance(self.id,list) & isinstance(other.id,list):
+                self.id = self.id + other.id
+            elif isinstance(self.id,str) & isinstance(other.id,list):
+                self.id = other.id.append(self.id)
+            elif isinstance(self.id,list) & isinstance(other.id,str):
+                self.id = self.id.append(other.id)
+            else:
+                self.id = [self.id,other.id]
+                
         # now, let's combine results. We need to keep only unique WikiItmes in results
         for item in other.results:
             if item not in self.results:
-                print(f"adding element {item.id}")
                 self.results.append(item)
-            # else:
-            #     print(f"ignoring element {item.id} because it is already in the list")
         return self
 
     def __repr__(self):
@@ -164,6 +172,11 @@ class WikiItemsGroup():
                 continue
         return sorted(set(chain(*properties)))
 
+    def collect_labels(self):
+        """Function combines all labels of all items of the group into one list"""
+        labels = [label for element in self.results for label in element.labels]
+        return sorted(set(labels))
+
 
 @dataclass
 class SynonymsFinder():
@@ -182,6 +195,8 @@ class SynonymsFinder():
     global_settings : dict
     sites: list[str] = field(default_factory=list)
     items:WikiItemsGroup = field(default_factory=list)
+    name_synonyms : WikiItemsGroup = None
+    disambiguation_synonyms: WikiItemsGroup = None
 
     def __post_init__(self):
         self.sites = self.global_settings["SITES"]
@@ -191,9 +206,22 @@ class SynonymsFinder():
     def fit(self):
         group = WikiItemsGroup(name=self.name, sites=self.sites)
         group.fit()
-        print(f"Fitting {self.name}")
-        print(f"The main group has the following results:\n{group.results}")
         self.items = group.results
+        self.fetch_children() #fetch the first level of names
+        #now, let's fetch grand children and fetch only results that are not in the name_list
+        #if a grand_child is a name instance and has synonyms, let's store them
+        instances_to_be_fetched = []
+        for child in self.name_group.results:
+            if (child.check_instance_type("P31",self.name_instances)) & (child.get_property("P460") is not None):
+                instances_to_be_fetched = instances_to_be_fetched + child.get_property("P460")
+
+        #check if we have not already fetched these instances
+        instances_to_be_fetched = [x for x in instances_to_be_fetched if x not in self.name_group.id]
+        if len(instances_to_be_fetched) > 0:
+            fetched_instances = [WikiItemsGroup(id=id,sites=self.sites).fit() for id in instances_to_be_fetched]
+            combined_group = reduce(lambda x,y: x+y, fetched_instances)
+            self.name_group = self.name_group + combined_group
+
         return self
 
     def fetch_children(self):
@@ -204,12 +232,15 @@ class SynonymsFinder():
         '''
         for el in self.items:
             self._process_name_instance(el)
-            # self._process_disambiguation_page(el)
+            self._process_disambiguation_page(el)
 
+
+    def collect_name_labels(self):
+        '''Function collects labels of the name_result'''
+        return(self.name_group.collect_labels())
 
     def _process_name_instance(self,element:WikiDataItem):
         '''function returns a group of wikiitems that are mentioned to be the same as the given element'''
-        print(f"    Processing synonyms of {self.name=}")
         #first let's check that this is a name instance if not, none is returned
         if not element.check_instance_type("P31",self.name_instances):
             return None
@@ -218,13 +249,12 @@ class SynonymsFinder():
         name_synonyms = element.get_property("P460")
         if name_synonyms is None:
             return None
-        print(f"Synonyms that have to be checked: {name_synonyms}")
+
+        #if it does, we create a WikiItemsGroup for each of these words and combine them
+        #together into one group containing only unique values
         fetched_synonyms = [WikiItemsGroup(id=id,sites=self.sites).fit() for id in name_synonyms]
-
         combined_group = reduce(lambda x,y: x+y, fetched_synonyms)
-        print(combined_group)
-
-        return fetched_synonyms
+        self.name_group = combined_group
 
     def _process_disambiguation_page(self,element:WikiDataItem):
         check = element.check_instance_type("P31",self.disambiguation_instances)
@@ -238,7 +268,10 @@ class SynonymsFinder():
 def main():
     finder = SynonymsFinder("Grigory",GLOBAL_SETTINGS)
     finder.fit()
-    finder.fetch_children()
+    print(finder.name_group)
+    print(finder.collect_name_labels())
+    #finder.fetch_children()
+    #print(finder.collect_name_labels())
     # group = WikiItemsGroup(name="Julia",sites=["enwiki","frwiki"])
     # group.fit()
     # print(group)
