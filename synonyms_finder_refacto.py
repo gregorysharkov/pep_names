@@ -1,3 +1,4 @@
+import re
 import json
 import urllib
 from itertools import chain
@@ -43,7 +44,7 @@ class WikiDataItem():
                 self.labels = self._collect_labels(self.labels_raw)
 
     def __repr__(self):
-        return_string = f'{self.id=}\n{self.claims=}\n{self.labels=}'
+        return_string = f'{self.id=}\n{self.labels=}'#\n{self.claims=}
         return return_string
 
     def __eq__(self,other):
@@ -107,37 +108,40 @@ class WikiItemsGroup():
         groups together
         '''
         # first, let's combine ids and names
-        if (self.name is None) and (other.name is None):
-            self.name = None
-        elif self.name is None:
-            self.name = other.name
-        else:
-            self.name = [self.name, other.name]
-
-        if (self.id is None) & (other.id is None):
-            self.id = None
-        elif self.id is None:
-            self.id = other.id
-        else:
-            if isinstance(self.id,list) & isinstance(other.id,list):
-                self.id = self.id + other.id
-            elif isinstance(self.id,str) & isinstance(other.id,list):
-                self.id = other.id.append(self.id)
-            elif isinstance(self.id,list) & isinstance(other.id,str):
-                self.id = self.id.append(other.id)
-            else:
-                self.id = [self.id,other.id]
-                
+        self.name = self._combine_str_values(self.name,other.name)
+        self.id = self._combine_str_values(self.id,other.id)
+        
         # now, let's combine results. We need to keep only unique WikiItmes in results
         for item in other.results:
             if item not in self.results:
                 self.results.append(item)
+
         return self
 
+    def _combine_str_values(self,value_a,value_b):
+        '''utility function to combine two values'''
+        if (value_a is None) & (value_b is None):
+            value_a = None
+        elif value_b is None:
+            value_a = value_a
+        elif value_a is None:
+            value_a = value_b
+        else:
+            if isinstance(value_a,list) & isinstance(value_b,list):
+                value_a = sorted(set(value_a + value_b))
+            elif isinstance(value_a,str) & isinstance(value_b,list):
+                value_a = sorted(set([value_a]+value_b))
+            elif isinstance(value_a,list) & isinstance(value_b,str):
+                value_a = sorted(set(value_a + [value_b]))
+            else:
+                value_a = sorted(set([value_a,value_b]))
+
+        return value_a
+        
     def __repr__(self):
-        return_string = f"{self.name=},{self.id=}\n{self.sites=}\nResults:\n"
+        return_string = f"\n{self.name=},{self.id=}\nResults:\n" 
         for result in self.results:
-            return_string = return_string + f"{result=}\n"
+            return_string = return_string + f"\n{result=}\n"
 
         return return_string
 
@@ -166,10 +170,10 @@ class WikiItemsGroup():
         '''get common list of claims with the given property'''
         properties = []
         for el in self.results:
-            try:
-                properties.append(el.claims[property])
-            except KeyError:
-                continue
+            claim = el.claims.get(property)
+            if claim:
+                properties.append(claim)
+
         return sorted(set(chain(*properties)))
 
     def collect_labels(self):
@@ -193,91 +197,112 @@ class SynonymsFinder():
     '''
     name:str
     global_settings : dict
-    sites: list[str] = field(default_factory=list)
-    items:WikiItemsGroup = field(default_factory=list)
-    name_synonyms : WikiItemsGroup = None
-    disambiguation_synonyms: WikiItemsGroup = None
+    sites: list[str] = None
+    items:WikiItemsGroup = None
 
     def __post_init__(self):
         self.sites = self.global_settings["SITES"]
         self.name_instances = self.global_settings["NAME_INSTANCES"]
         self.disambiguation_instances = self.global_settings["DISAMBIGUATION_INSTANCES"]
 
+    def __repr__(self):
+        return_string = f"Global_name: {self.name}\nResults:\n"
+        if self.items is None:
+            return_string = return_string + "—"
+        else:
+            for item in self.items.results:
+                return_string = return_string + repr(item)
+        return return_string
+
     def fit(self):
+        # create the top-level group for the requested name
         group = WikiItemsGroup(name=self.name, sites=self.sites)
         group.fit()
-        self.items = group.results
-        self.fetch_children() #fetch the first level of names
-        #now, let's fetch grand children and fetch only results that are not in the name_list
-        #if a grand_child is a name instance and has synonyms, let's store them
-        instances_to_be_fetched = []
-        for child in self.name_group.results:
-            if (child.check_instance_type("P31",self.name_instances)) & (child.get_property("P460") is not None):
-                instances_to_be_fetched = instances_to_be_fetched + child.get_property("P460")
+        group = group + self._collect_children(group,group.id)
+        self.items = group
 
-        #check if we have not already fetched these instances
-        instances_to_be_fetched = [x for x in instances_to_be_fetched if x not in self.name_group.id]
-        if len(instances_to_be_fetched) > 0:
-            fetched_instances = [WikiItemsGroup(id=id,sites=self.sites).fit() for id in instances_to_be_fetched]
-            combined_group = reduce(lambda x,y: x+y, fetched_instances)
-            self.name_group = self.name_group + combined_group
+    def collect_labels(self):
+        '''Interface to collect labels from the group'''
+        if self.items:
+            return_values = self.items.collect_labels()
+        else:
+            return_values = None
 
-        return self
+        # Final touch: some values may contain some noise, like "/" or (values in brakets)
+        # we need to take kare of that
+        for el in return_values:
+            if "/" in el:
+                new_split = el.split(r" / ")
+                print(el, new_split)
+                return_values.remove(el)
+                for new_el in new_split:
+                    return_values.append(new_el)
+            #it seems like another encoding
+            elif "/" in el:
+                new_split = el.split(r"/")
+                print(el, new_split)
+                return_values.remove(el)
+                for new_el in new_split:
+                    return_values.append(new_el)
 
-    def fetch_children(self):
-        '''
-        function creates 2 list WikiItemsGroups for children:
-        * one list of wiki groups for each synonym instance
-        * one list of wiki groups for each disambiguation instance
-        '''
-        for el in self.items:
-            self._process_name_instance(el)
-            self._process_disambiguation_page(el)
+        
+        return_values = sorted(set(re.sub(r" \(.+?\) ?","",x) for x in return_values))
+        return return_values
 
+    def _collect_children(self,group:WikiItemsGroup,ids:list[str]=None) -> WikiItemsGroup:
+        '''Recurcive function to collect all children of a given group'''
+        new_ids = self._check_for_new_ids(group,ids)
+        ids = [] if not ids else ids
+        if new_ids:
+            child_group = self._create_group_from_ids(new_ids)
+            return_group = group + self._collect_children(child_group,ids+new_ids)
+        else:
+            return_group = group
 
-    def collect_name_labels(self):
-        '''Function collects labels of the name_result'''
-        return(self.name_group.collect_labels())
+        return return_group
 
-    def _process_name_instance(self,element:WikiDataItem):
-        '''function returns a group of wikiitems that are mentioned to be the same as the given element'''
-        #first let's check that this is a name instance if not, none is returned
-        if not element.check_instance_type("P31",self.name_instances):
-            return None
+    def _check_for_new_ids(self,group,ids:list[str]=None):
+        '''Function checks if a group contains any new ids compared to ids of the group'''
+        if ids:
+            child_ids = self._get_child_ids(group)
+            return_list = sorted(x for x in child_ids if x not in ids)
+        else:  
+            return_list = self._get_child_ids(group)
+        return return_list
 
-        #next let's check that the item has P460 property meaning that it has synonyms        
-        name_synonyms = element.get_property("P460")
-        if name_synonyms is None:
-            return None
+    def _get_child_ids(self,group: WikiItemsGroup) -> list[str]:
+        '''Collect list of name synonym ids'''
+        if group.results:
+            if (group.get_property("P460")):
+                children = group.get_property("P460")
+        else:
+            children = []
 
-        #if it does, we create a WikiItemsGroup for each of these words and combine them
-        #together into one group containing only unique values
-        fetched_synonyms = [WikiItemsGroup(id=id,sites=self.sites).fit() for id in name_synonyms]
-        combined_group = reduce(lambda x,y: x+y, fetched_synonyms)
-        self.name_group = combined_group
+        return children
 
-    def _process_disambiguation_page(self,element:WikiDataItem):
-        check = element.check_instance_type("P31",self.disambiguation_instances)
-        if not check:
-            return None
+    def _create_group_from_ids(self,ids: list[str])->WikiDataItem:
+        '''Create a new WikiItemsGroup from a list of ids'''
+        fetched_items = [WikiItemsGroup(id=x,sites=self.sites).fit() for x in ids]
+        combined_group = reduce(lambda x,y: x+y, fetched_items)
+        return combined_group
 
-        print(f"Checking if element {element.id} is a disambiguation page: {check}")
-        pass
+from time import time
+def timeit(method):
+    def timed(*args, **kw):
+        ts = time()
+        result = method(*args, **kw)
+        te = time()
+        print(f"Execution time: {(te - ts):2.2f} sec")
+        return result
 
+    return timed
 
+@timeit
 def main():
-    finder = SynonymsFinder("Grigory",GLOBAL_SETTINGS)
-    finder.fit()
-    print(finder.name_group)
-    print(finder.collect_name_labels())
-    #finder.fetch_children()
-    #print(finder.collect_name_labels())
-    # group = WikiItemsGroup(name="Julia",sites=["enwiki","frwiki"])
-    # group.fit()
-    # print(group)
-
-    # print(group.get_property("P1560"))
     
+    finder = SynonymsFinder("Stéphan",GLOBAL_SETTINGS)
+    finder.fit()
+    print(finder.collect_labels())
 
 if __name__ == '__main__':
     main()
