@@ -1,8 +1,11 @@
 from time import time
 from threading import BoundedSemaphore
-from synonyms_finder import Synonyms_finder
+#from synonyms_finder import Synonyms_finder
+from synonyms_finder_refacto import SynonymsFinder
+from synonyms_finder_settings import GLOBAL_SETTINGS
 
 def timeit(method):
+    """decorator function to measure execution time"""
     def timed(*args, **kw):
         ts = time()
         result = method(*args, **kw)
@@ -17,22 +20,22 @@ def parse_names(names,threadLimiter=None):
     '''
     threads = []
     for name in names:
-        req = Synonyms_finder(name)
+        req = SynonymsFinder(name,GLOBAL_SETTINGS,threadLimiter=threadLimiter)
         req.start()
         threads.append(req)
 
     return_dict = {}
     for res in threads:
         res.join()
-        return_dict.update(res.synonyms_dict)
+        return_dict.update(res.collect_labels())
     return return_dict
 
 @timeit
-def test_one_name(*args,**kwargs):
-    name = "julia"
-    syn = Synonyms_finder(name)
+def test_one_name():
+    name = "Julia"
+    syn = SynonymsFinder(name,GLOBAL_SETTINGS)
     syn.fit()
-    print(syn)
+    print(syn.collect_labels())
 
 @timeit
 def test_several_names():
@@ -40,7 +43,7 @@ def test_several_names():
     maximumNumberOfThreads = 5
     threadLimiter = BoundedSemaphore(maximumNumberOfThreads)
     names_dict = parse_names(names,threadLimiter)
-    print(f"names_dict contains {len(names_dict)} elements.")
+    print(names_dict)
 
 if __name__ == '__main__':
     # test_one_name()

@@ -1,6 +1,7 @@
 import re
 import json
 import urllib
+from threading import Thread, BoundedSemaphore
 from itertools import chain
 from functools import reduce
 from dataclasses import dataclass, field
@@ -78,7 +79,7 @@ class WikiDataItem():
         """
         return_list = []
         for i in range(len(data)):
-            if "id" in data[i]["mainsnak"]["datavalue"]["value"]:
+            if "Id" in [str(x).capitalize() for x in data[i]["mainsnak"]["datavalue"]["value"]]:
                 return_list.append(data[i]["mainsnak"]["datavalue"]["value"]["id"])
         return return_list
 
@@ -182,8 +183,8 @@ class WikiItemsGroup():
         return sorted(set(labels))
 
 
-@dataclass
-class SynonymsFinder():
+
+class SynonymsFinder(Thread):
     '''
     The class is responsible for finding synonyms of a given name
     General logic of the fit step
@@ -195,15 +196,28 @@ class SynonymsFinder():
         * check contents of the disambiguation page
         * if any of these links is a name instance, treat it process it like a name
     '''
-    name:str
-    global_settings : dict
     sites: list[str] = None
     items:WikiItemsGroup = None
 
-    def __post_init__(self):
+    def __init__(self,name,global_settings,
+                 group=None, target=None, 
+                 threadLimiter=None, args=(), kwargs=()):
+        super(SynonymsFinder,self).__init__(group=group,target=target,name=name)
+
+        self.args = args
+        self.kwargs = kwargs
+
+        self.thread_limiter = threadLimiter
+
+        self.name = name
+        self.global_settings = global_settings
+        self.items = None
+
         self.sites = self.global_settings["SITES"]
         self.name_instances = self.global_settings["NAME_INSTANCES"]
         self.disambiguation_instances = self.global_settings["DISAMBIGUATION_INSTANCES"]
+
+        self.level = 0
 
     def __repr__(self):
         return_string = f"Global_name: {self.name}\nResults:\n"
@@ -233,25 +247,27 @@ class SynonymsFinder():
         for el in return_values:
             if "/" in el:
                 new_split = el.split(r" / ")
-                print(el, new_split)
                 return_values.remove(el)
                 for new_el in new_split:
                     return_values.append(new_el)
             #it seems like another encoding
             elif "/" in el:
                 new_split = el.split(r"/")
-                print(el, new_split)
                 return_values.remove(el)
                 for new_el in new_split:
                     return_values.append(new_el)
 
         
         return_values = sorted(set(re.sub(r" \(.+?\) ?","",x) for x in return_values))
-        return return_values
+        return {self.name:return_values}
 
     def _collect_children(self,group:WikiItemsGroup,ids:list[str]=None) -> WikiItemsGroup:
         '''Recurcive function to collect all children of a given group'''
         new_ids = self._check_for_new_ids(group,ids)
+
+        print(f"Ids captured ad level {self.level}: {new_ids}")
+        self.level += 1
+
         ids = [] if not ids else ids
         if new_ids:
             child_group = self._create_group_from_ids(new_ids)
@@ -286,6 +302,18 @@ class SynonymsFinder():
         combined_group = reduce(lambda x,y: x+y, fetched_items)
         return combined_group
 
+    def run(self):
+        """function that is called whenever the thread is started"""
+        if self.thread_limiter:
+            self.thread_limiter.acquire()
+        
+        try:
+            self.fit()
+        finally:
+            if self.thread_limiter:
+                self.thread_limiter.release()
+            print(f"Done with {self.name}")
+
 from time import time
 def timeit(method):
     def timed(*args, **kw):
@@ -297,12 +325,40 @@ def timeit(method):
 
     return timed
 
+def parse_names(names,threadLimiter=None):
+    '''Function parses a list of names. Each name is parsed in a separate thread
+    '''
+    threads = []
+    for name in names:
+        req = SynonymsFinder(name,GLOBAL_SETTINGS,threadLimiter=threadLimiter)
+        req.start()
+        threads.append(req)
+
+    return_dict = {}
+    for res in threads:
+        res.join()
+        return_dict.update(res.collect_labels())
+    return return_dict
+
 @timeit
+def test_one_name():
+    name = "Julia"
+    syn = SynonymsFinder(name,GLOBAL_SETTINGS)
+    syn.fit()
+    print(syn.collect_labels())
+
+@timeit
+def test_several_names():
+    names = ["Bill","George","Michael","John","Gregory"]
+    maximumNumberOfThreads = 5
+    threadLimiter = BoundedSemaphore(maximumNumberOfThreads)
+    names_dict = parse_names(names,threadLimiter)
+    print(names_dict)
+
+
 def main():
-    
-    finder = SynonymsFinder("Stéphan",GLOBAL_SETTINGS)
-    finder.fit()
-    print(finder.collect_labels())
+    test_one_name()
+    #test_several_names()
 
 if __name__ == '__main__':
     main()
