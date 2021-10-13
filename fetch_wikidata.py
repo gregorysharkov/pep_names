@@ -5,7 +5,9 @@ from time import sleep
 from threading import BoundedSemaphore
 import pandas as pd
 from utils import load_data
-from synonyms_finder import Synonyms_finder
+from synonyms_finder_refacto import SynonymsFinder
+from synonyms_finder_settings import GLOBAL_SETTINGS
+#from synonyms_finder import Synonyms_finder
 
 
 
@@ -15,12 +17,12 @@ def get_unique_names(original, col):
         return return_seq
 
 
-def parse_names(names):
+def parse_names(names,threadLimiter):
         '''Function parses a list of names. Each name is parsed in a separate thread
         '''
         threads = []
         for name in names:
-                req = Synonyms_finder(name)
+                req = SynonymsFinder(name,GLOBAL_SETTINGS,threadLimiter=threadLimiter)
                 req.start()
                 threads.append(req)
 
@@ -33,19 +35,19 @@ def parse_names(names):
         
 
 if __name__ == "__main__":
-        # maximumNumberOfThreads = 30
-        # threadLimiter = BoundedSemaphore(maximumNumberOfThreads)
+        maximumNumberOfThreads = 40
+        threadLimiter = BoundedSemaphore(maximumNumberOfThreads)
 
-        # original = load_data("data\\source\\united_states_governors.csv")
+        original = load_data("data\\source\\united_states_governors.csv")
 
-        # unique_names = get_unique_names(original,"governor_split")
-        # print(len(unique_names))
+        unique_names = get_unique_names(original,"governor_split")
+        print(len(unique_names))
 
-        # names_dict = parse_names(unique_names)
-        # with open("data\\dict\\names.json", "w",encoding="utf-8") as file:
-        #         file.write(json.dumps(names_dict,indent=2))
+        names_dict = parse_names(unique_names,threadLimiter)
+        with open("data\\dict\\names.json", "w",encoding="utf-8") as file:
+                file.write(json.dumps(names_dict,indent=2))
 
-        name = "julia"
-        syn = Synonyms_finder(name)
-        syn.fit()
-        print(syn)
+        # name = "julia"
+        # syn = Synonyms_finder(name)
+        # syn.fit()
+        # print(syn)

@@ -79,8 +79,11 @@ class WikiDataItem():
         """
         return_list = []
         for i in range(len(data)):
-            if "Id" in [str(x).capitalize() for x in data[i]["mainsnak"]["datavalue"]["value"]]:
-                return_list.append(data[i]["mainsnak"]["datavalue"]["value"]["id"])
+            try:
+                if "Id" in [str(x).capitalize() for x in data[i]["mainsnak"]["datavalue"]["value"]]:
+                    return_list.append(data[i]["mainsnak"]["datavalue"]["value"]["id"])
+            except KeyError:
+                pass
         return return_list
 
     def _collect_labels(self,data):
@@ -265,7 +268,7 @@ class SynonymsFinder(Thread):
         '''Recurcive function to collect all children of a given group'''
         new_ids = self._check_for_new_ids(group,ids)
 
-        print(f"Ids captured ad level {self.level}: {new_ids}")
+        #print(f"Ids captured ad level {self.level}: {new_ids}")
         self.level += 1
 
         ids = [] if not ids else ids

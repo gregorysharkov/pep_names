@@ -19,6 +19,7 @@ def only_roman_chars(unistr):
     isalpha suggested by John Machin
     '''
     return all(is_latin(uchr) for uchr in unistr if uchr.isalpha()) 
+    
 def get_synonyms(key,dict,only_roman=True):
     '''Function creates a list of all synonyms of a given key
     the key is also included into the final list
