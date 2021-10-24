@@ -1,4 +1,5 @@
 import re
+import random
 import unicodedata as ud
 from random import sample, seed
 from itertools import product, permutations, chain
@@ -31,6 +32,7 @@ class TrueSynonymsGenerator():
     name_split: list[str] = field(default_factory=list)
     combinations: list[str] = field(default_factory=list)
     selected_combinations: list[str] = field(default_factory=list)
+    n_sample_from_dict: int = None
 
     def fit(self, dict):
         """
@@ -74,6 +76,8 @@ class TrueSynonymsGenerator():
         return_list = [x for x in return_list if only_roman_chars(x)]
         return_list.sort()
         return_list = list(set([word] + return_list))
+        if self.n_sample_from_dict:
+            return_list = random.sample(return_list,min(len(return_list),self.n_sample_from_dict),)
         return return_list
 
     def _generate_combinations(self,dict):
@@ -93,12 +97,19 @@ class TrueSynonymsGenerator():
 
 
 if __name__ == '__main__':
-    test_name = "Bill,. Gates Geferson"
-    test_dict = {"Bill": ["William","Guillaume"]}
+    # test_name = "Bill,. Gates Geferson"
+    # test_dict = {"Bill": ["William","Guillaume"]}
+    import json
+    with open("data\\dict\\dictionary_en_fr_ar_ru.yml","r") as f:
+        contents = f.read()
+        f.close()
+    test_dict = json.loads(contents)
+    test_name = "Juan Francisco Luis"
 
-    test_gen = TrueSynonymsGenerator(test_name)
+    random.seed(20211024)
+    test_gen = TrueSynonymsGenerator(test_name,n_sample_from_dict=2)
     test_gen.fit(test_dict)
-    test_gen.sample(1)
+    test_gen.sample()
     print(len(test_gen.combinations))
     print(len(test_gen.selected_combinations))
     print(repr(test_gen))
