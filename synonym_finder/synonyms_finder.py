@@ -6,22 +6,8 @@ from threading import Thread, BoundedSemaphore
 from itertools import chain
 from functools import reduce
 from dataclasses import dataclass, field
-from synonym_finder.synonyms_finder_utils import fetch_url, IdRequestParam,TitleRequestParam
-from utils.proxy_handler import SgProxyHandler
-from synonym_finder.synonyms_finder_settings import GLOBAL_SETTINGS
-
-
-import re
-import json
-import urllib
-from time import time
-from threading import Thread, BoundedSemaphore
-from itertools import chain
-from functools import reduce
-from dataclasses import dataclass, field
-from synonym_finder.synonyms_finder_utils import fetch_url, IdRequestParam,TitleRequestParam
-from utils.proxy_handler import SgProxyHandler
-from synonym_finder.synonyms_finder_settings import GLOBAL_SETTINGS
+from .synonym_finder_utils import fetch_url, IdRequestParam, TitleRequestParam
+from .synonyms_finder_settings import GLOBAL_SETTINGS
 
 
 class WikiDataItem():
@@ -396,11 +382,6 @@ def test_several_names():
 
 
 def main():
-    #set up proxy handler
-    credentials_path = "conf\\local\\credentials.yml"
-    sg_proxy = SgProxyHandler(credentials_path)
-    sg_proxy.setup_handler()
-
     test_one_name()
     #test_several_names()
 

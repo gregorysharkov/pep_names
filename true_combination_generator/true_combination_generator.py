@@ -8,9 +8,10 @@ latin_letters= {}
 def is_latin(uchr):
     '''Checks if the character is lating
     '''
-    try: return latin_letters[uchr]
-    except KeyError:
-         return latin_letters.setdefault(uchr, 'LATIN' in ud.name(uchr))
+    if uchr in latin_letters:
+        return latin_letters[uchr]
+    else:
+        return latin_letters.setdefault(uchr, 'LATIN' in ud.name(uchr))
 
 
 def only_roman_chars(unistr):
@@ -66,10 +67,9 @@ class TrueSynonymsGenerator():
         """get synonyms of a given name, if the dictionary
         does not contain the word, only the word is returned
         """
-        try:
+        return_list = []
+        if word in dict:
             return_list = list([word] + dict[word])
-        except KeyError:
-            return_list = []
        
         return_list = [x for x in return_list if only_roman_chars(x)]
         return_list.sort()
@@ -93,12 +93,13 @@ class TrueSynonymsGenerator():
 
 
 if __name__ == '__main__':
-    test_name = "Bill,. Bill Gates Geferson"
+    test_name = "Bill,. Gates Geferson"
     test_dict = {"Bill": ["William","Guillaume"]}
 
     test_gen = TrueSynonymsGenerator(test_name)
     test_gen.fit(test_dict)
-    test_gen.sample()
+    test_gen.sample(1)
     print(len(test_gen.combinations))
     print(len(test_gen.selected_combinations))
     print(repr(test_gen))
+    print(test_gen.selected_combinations)

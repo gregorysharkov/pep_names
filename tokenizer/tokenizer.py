@@ -105,10 +105,10 @@ def preprocess_list_into_matrix(lst,tokenizer,max_words=None,max_char=None,debug
     return final_output
 
 def main():
-    path = "name_similarity/data/combinations/"
-    col_list = ["name","combinations","match"]
-    true_data = pd.read_csv(path+"true_match.csv",sep=";").dropna()
-    false_data = pd.read_csv(path+"false_match.csv",sep=";").dropna()
+    path = "data\\combinations\\"
+    col_list = ["governor","combinations","match"]
+    true_data = pd.read_csv(path+"governors_true_match.csv",sep=";").dropna()
+    false_data = pd.read_csv(path+"governors_false_match.csv",sep=";").dropna()
 
     true_data.columns = col_list
     false_data.columns = col_list
@@ -116,7 +116,7 @@ def main():
     combined_data = pd.concat([true_data,false_data])
     combined_data = combined_data.sample(frac=1,random_state=20210826)
 
-    name_list = list(combined_data.name)
+    name_list = list(combined_data.governor)
     combination_list = list(combined_data.combinations)
 
     print(name_list[:5])
@@ -125,10 +125,10 @@ def main():
     tokenizer = train_tokenizer(name_list+combination_list)
     save_tokenizer(
         tokenizer,
-        "/data/tokenizer/20210924_tokenizer.json"
+        "data\\tokenizer\\20211023_tokenizer.json"
     )
 
-    tokenizer = load_tokenizer("/data/tokenizer/20211005_tokenizer.json")
+    tokenizer = load_tokenizer("data\\tokenizer\\20211023_tokenizer.json")
     print(tokenizer.word_index)
     pass
 

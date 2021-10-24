@@ -1,4 +1,4 @@
-from synonym_finder.synonym_finder import SynonymsFinder
+from synonym_finder.synonyms_finder import SynonymsFinder
 from synonym_finder.synonyms_finder_settings import GLOBAL_SETTINGS
 
 if __name__=="__main__":

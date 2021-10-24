@@ -10,9 +10,9 @@ def capitalize_every_word(string):
     else:
         return string
 
-def load_data(path,column,debug=True):
+def load_data(path,column,sep=";",debug=True):
     '''Function loads data from the given path'''
-    data = pd.read_csv(path,sep=";")
+    data = pd.read_csv(path,sep=sep)
     data[column] = data[column].str.strip()
     data[column] = data[column].str.replace("  "," ")
     data[column] = data[column].str.translate(str.maketrans('', '', string.punctuation))

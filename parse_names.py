@@ -3,9 +3,8 @@ import json
 from utils.utils import load_data
 from functools import reduce
 from threading import BoundedSemaphore
-from synonym_finder.synonym_finder import SynonymsFinder
+from synonym_finder.synonyms_finder import SynonymsFinder
 from synonym_finder.synonyms_finder_settings import GLOBAL_SETTINGS
-from utils.proxy_handler import SgProxyHandler
 
 def collect_names(lst: list[str]) -> list[str]:
     '''Function collects unique names from a given list of strings'''
@@ -29,21 +28,16 @@ def parse_list(names,threadLimiter=None):
 
 def parse_names(names):
     """Function parces a list of names with SynonymFinder"""
-    maximumNumberOfThreads = 40
+    maximumNumberOfThreads = 30
     threadLimiter = BoundedSemaphore(maximumNumberOfThreads)
     names_dict = parse_list(names,threadLimiter)
     return names_dict
 
 def main():
-    #set up proxy handler
-    credentials_path = "conf\\local\\credentials.yml"
-    sg_proxy = SgProxyHandler(credentials_path)
-    sg_proxy.setup_handler()
-
     #read data
-    path_to_data = "data\\raw\\bg_names.csv"
-    raw_data = load_data(path_to_data,"bg_name")
-    unique_names = collect_names(raw_data.bg_name_split)
+    path_to_data = "data\\source\\united_states_governors.csv"
+    raw_data = load_data(path_to_data,"governor",sep=",")
+    unique_names = collect_names(raw_data.governor_split)
     
     #parse unique names
     names_dict = parse_names(unique_names)

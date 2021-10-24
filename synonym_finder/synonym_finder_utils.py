@@ -16,11 +16,11 @@ def fetch_url(url):
         try:
             response = urllib.request.urlopen(url)
         except urllib.error.URLError:
-                print("URL error. Falling to the retry loop with: "+url)
-                pass
+            print("URL error. Falling to the retry loop with: "+url)
+            pass
         except urllib.error.HTTPError:
-                print("HTTP error. Falling to the retry loop with: "+url)
-                pass 
+            print("HTTP error. Falling to the retry loop with: "+url)
+            pass 
         else:
                 #if there is no error, we can return the response
                 return response
