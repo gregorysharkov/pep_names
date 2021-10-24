@@ -37,7 +37,7 @@ def process_dataset(data,col_name):
 
 
 def main():
-    data_path = "data\\raw\\united_states_governors.csv"
+    data_path = "data\\source\\united_states_governors.csv"
     col_name = "governor"
     raw_data = load_data(data_path,col_name,sep=",")
     print(f"Name list length: {len(raw_data.governor)}")
@@ -45,7 +45,7 @@ def main():
     false_match_data = process_dataset(raw_data,col_name)
     print(f"Synonyms list length: {len(false_match_data.governor)}")
     
-    output_path = "name_similarity/data/combinations/"
+    output_path = "data\\combinations\\"
     false_match_data.to_csv(output_path+"false_match.csv",sep=";",index=False)
     pass
 
