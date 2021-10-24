@@ -47,7 +47,7 @@ fit_settings = FitSettings(
 
 BASE_EXPERIMENT = ExperimentSettings(
         experiment_name="2_level_rnn",
-        log_dir="/data/lab/cple/emb/grigory/name_similarity/experiments_with_two_layers/baseline/",
+        log_dir="logs\\baseline\\base\\",
         outer_settings=zero_to_one_outer_model_settings,
         fit_settings=fit_settings,
         checkpoint=None
@@ -55,7 +55,7 @@ BASE_EXPERIMENT = ExperimentSettings(
 
 ABS_EXPERIMENT = ExperimentSettings(
         experiment_name="2_level_rnn",
-        log_dir="/data/lab/cple/emb/grigory/name_similarity/experiments_with_two_layers/with_abs/",
+        log_dir="logs\\baseline\\abs\\",
         outer_settings=abs_outer_model_settings,
         fit_settings=fit_settings,
         checkpoint=None

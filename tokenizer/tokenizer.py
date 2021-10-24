@@ -1,8 +1,10 @@
+import re
 import io
 import json
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from typing import Iterable
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer, tokenizer_from_json
 
@@ -48,26 +50,49 @@ def save_tokenizer(tokenizer: Tokenizer, path: str) -> None:
     return
 
 
-def preprocess_list(lst,tokenizer,max_len=None):
+def preprocess_list(lst:Iterable, tokenizer:Tokenizer, max_words:int=None, max_char:int=None,debug=False):
     """
-    function preprocesses a list of values returning tokenized sequences
-    Args:
-        lst: list of strings to be processed
-        tokenizer: a tokenizer object
-        max_len: if we need to ensure the same length of strings, we can provide an integer here
-    Returns:
-        a numpy array with tokenized sequences. Each sequence in a separate row
+    Function preprocesses a given list. A string is turned into a sequence of words of length max_words,
+    then each word is turned into a sequence of characters of length max_char, if any of maximum parameters is 
+    not specified, they are calcualted based on the provided list
+    function returns a tf.DataSet
     """
-    return_seq = tokenizer.texts_to_sequences(lst)
-    seq = np.array(
-        pad_sequences(return_seq, maxlen=max_len,padding="post"),
-        dtype="float32"
-    )
-    return seq
+    if max_words is None:
+        word_counts = [len(x.split()) for x in lst]
+        max_words = max(word_counts)
+
+    if max_char is None:
+        words = list(set([word for name in lst for word in name.split()]))
+        word_lengths = [len(word) for word in words]
+        max_char = max(word_lengths)
+
+    #some cleaning
+    lst = list(map(lambda x: x.replace(u"\xa0"," "),lst))
+    lst = list(map(lambda x: x.replace("  "," "),lst))
+    lst = list(map(lambda x: x.replace("  "," "),lst))
+    lst = list(map(lambda x: x.strip(),lst))
+
+    #now let's convert every string into a matrix
+    padded_test_string = [x + " "*(max_words-len(x.split())) for x in lst]
+    test_split = [x.split(" ")[:max_words] for x in padded_test_string]
+    test_sequences = [tokenizer.texts_to_sequences(x) for x in test_split]
+    padded_test_sequences = [pad_sequences(x,maxlen=max_char,padding="post") for x in test_sequences]
+    return_matrix = tf.data.Dataset.from_tensor_slices(padded_test_sequences)
+
+    if debug:
+        print(f"{padded_test_string=}, {np.shape(padded_test_string)=}")
+        print(f"{test_split=}, {np.shape(test_split)=}")
+        print(f"{test_sequences=} {np.shape(test_sequences)=}")
+        print(f"{padded_test_sequences=} {np.shape(padded_test_sequences)=}")
+        print(f"{return_matrix=}")
+
+    return return_matrix
 
 def preprocess_list_into_matrix(lst,tokenizer,max_words=None,max_char=None,debug=False):
     """Function turns a list of strings into a list of 2x2 matrices: row for word, col for character"""
     lst = list(map(lambda x: x.replace(u"\xa0"," "),lst))
+    lst = list(map(lambda x: x.replace("-",""),lst))
+    lst = list(map(lambda x: x.replace(",",""),lst))
     lst = list(map(lambda x: x.replace("  "," "),lst))
     lst = list(map(lambda x: x.replace("  "," "),lst))
     lst = list(map(lambda x: x.strip(),lst))
@@ -79,7 +104,7 @@ def preprocess_list_into_matrix(lst,tokenizer,max_words=None,max_char=None,debug
         words = list(set([word for name in lst for word in name.split()]))
         max_char = max([len(word) for word in words])
     
-    padded_string = [x + " _"*(max_words-len(x.split())) for x in lst]
+    padded_string = [x + " _"*(max_words-len(x.split())) for x in lst][:max_words]
     word_split = [x.split(" ",maxsplit=max_words) for x in padded_string]
     
     sequences = [tokenizer.texts_to_sequences(x) for x in word_split]    
@@ -103,6 +128,35 @@ def preprocess_list_into_matrix(lst,tokenizer,max_words=None,max_char=None,debug
         print(f"{final_output=}")
 
     return final_output
+
+def turn_matrix_into_strings(df, tokenizer):
+    """
+    A helper function that turns a tensorflow dataset into a list of strings
+    """
+    updated_dict = tokenizer.index_word
+    updated_dict.update({0:"_"})
+    
+    def get_char(id):
+        return updated_dict[id]
+
+    def get_word(word):
+        return "".join(get_char(char) for char in word)
+
+    def clean_string(string):
+        string = re.sub("_","",string)
+        string = re.sub("-","",string)
+        string = re.sub(u"\xa0"," ",string)
+        string = re.sub("  ","",string)
+        string = re.sub(r" ^",r"^",string)
+        return string
+
+    strings = []
+    for el in df.as_numpy_iterator():
+        string = " ".join(get_word(word) for word in el)
+        strings.append(string)
+    strings = [clean_string(x) for x in strings]
+    return strings
+
 
 def main():
     path = "data\\combinations\\"

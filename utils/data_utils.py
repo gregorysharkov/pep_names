@@ -2,9 +2,7 @@ import pickle
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from typing import Iterable
 from tensorflow.keras.preprocessing.text import Tokenizer
-from tokenizer.tokenizer import preprocess_list
 
 def clean_data(data):
     """Function cleans a dataset"""
@@ -12,7 +10,7 @@ def clean_data(data):
     data = data.replace("\xa0"," ")
     return data
 
-def load_dataset(path,col_names=["name","combination","match"],limit=None):
+def load_dataset(path,col_names=["governor","combination","match"],limit=None):
     '''Function loads a dataset'''
     dataset = pd.read_csv(path,sep=";")
     dataset = clean_data(dataset)
@@ -48,28 +46,6 @@ def train_test_split_pandas(data:pd.DataFrame,p_train,p_val):
     raw_test = data[n_train+n_val:]
 
     return raw_training,raw_validation,raw_test
-
-def train_test_split(data:pd.DataFrame, tk: Tokenizer):
-    '''Function splits data into a training, validation and test datasets'''
-    name_seq = preprocess_list(data.name,tk,50)
-    combination_seq = preprocess_list(data.combination,tk,50)
-    match_seq = np.array(data.match)
-
-    combined_data = tf.data.Dataset.from_tensor_slices(((name_seq,combination_seq),match_seq)).shuffle(10).batch(1000)
-    train_ratio = .6
-    val_ratio = .2
-    test_ratio = .2
-
-    train_batches = int(len(combined_data) * train_ratio)
-    val_batches = int(len(combined_data) * val_ratio)
-    test_batches = int(len(combined_data) * test_ratio)
-
-    train_data = combined_data.take(train_batches)
-    test_data = combined_data.skip(train_batches)
-    val_data = test_data.take(val_batches)
-    test_data = test_data.skip(test_batches)
-
-    return train_data,val_data,test_data
 
 
 def save_tf_dataset(data,path):
