@@ -181,10 +181,15 @@ Generation of false matches is much simpler. We simply split the name into words
 ![FalseSynonymsGenerator](./images/negative_synonyms_generator.png)
 ## Seameese network
 The main idea is that we need a network that will be generating some representation of a string. We will feet two strings into this network, pass them both though this network, obtain two representations (one for each string) and them compare them with some measure. The final prediction will be a linear function of this similarity. The overall architecture is presented in the figure below:  
-![model_architecture](./images/model_architecture.jpg)
+![model_architecture](./images/outer_model_transormations.png)  
+The inner model takes two strings, passes each of the through the same inner model and compares the representations with cosine similarities.
   
 I chose the following architecture for the inner model:
-![inner_model_architecture](./images/inner_model.jpg)
+![inner_model_architecture](./images/inner_model_transformations.png)  
+The inner model consists of the following layers:
+* Embedding layer, that embeds each character into a representation vector
+* Char level bidirectional layer with attention. It computes representation of each character and uses attention mechanism to make a weighted sum of character representations.
+* Word level bidirectional layer with attention. It computes representation of each word and uses attention mechanism to make a weighted sum of word representations.
 
 As a base model I will be using the approach proposed [here](https://github.com/amansrivastava17/lstm-siamese-text-similarity)
 
