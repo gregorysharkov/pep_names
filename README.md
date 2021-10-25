@@ -2,7 +2,7 @@
 
 The goal of this prohect is to build an deep learning model that measures similarity of names of two individuals. I am doing this for my project at work, but I do not want to share the data that we are using, so for this repo I will prepare my own dataset using [Data from Open ICPSR](https://www.openicpsr.org/openicpsr/project/102000/version/V3/view). This is a list of all governors of all states in the USA.  
   
-The model has to be able to handle misspellings, shold tolerate some alternations in the words order, for example "first name" + "second name" should be considered the same as "second name" + "first name" and ideally should be able to handle different writings of the same name, for example Bill = William or Stéphane = Etien.
+The model has to be able to handle misspellings, should tolerate some alternations in the words order, for example "first name" + "second name" should be considered the same as "second name" + "first name" and ideally should be able to handle different writings of the same name, for example Bill = William or Stéphane = Etien.
   
 So I will try to build a deep learning network described by [Chen Zhao and Yeye He](https://www.microsoft.com/en-us/research/uploads/prod/2019/04/Auto-EM.pdf) in tensorflow.
   
@@ -14,7 +14,7 @@ The first step is to prepare the data. I will need to generate two sets:
 1. positive matches. Pairs of names that represent the same person, therefore the distance should be 1
 2. negative matches. Pairs of names that do not represent the same person, therefore the distance should be 0.
   
-To generate positive matches I build a module that uses [wikidata api](https://www.wikidata.org/wiki/Wikidata:Data_access). I have built a class named "Synonym_finder" that given a string will try to search alternative spellings of this string asumming that this is a name or a surname. So I create a dictionary that fetches every word in my dataset to create a list of synonyms of each word i try to find. More details about Synonyms finder are provided below.  
+To generate positive matches I build a module that uses [wikidata api](https://www.wikidata.org/wiki/Wikidata:Data_access). I have built a class named "Synonym_finder" that given a string will try to search alternative spellings of this string asumming that this is a name or a surname. So I create a dictionary that fetches every word in my dataset to create a list of synonyms of each word I try to find. More details about Synonyms finder are provided below.  
   
 The next step is to create positive matches by using the original data and this dictionary. For each word in a name, we will try to replace it with a synonym and use one of the synonyms instead and then permutating word order in the given name.
   
@@ -34,10 +34,11 @@ We need to make sure that the first API call brings us to an item of a proper in
   
 For the sake of simplicity of this project I kept only synonyms with latin characters. However the scope could be extended to other alphabets.
 ### Usage
-Wikidata has a lot of different APIs that alow requesting different types of data. Realisation of this idea requires sending multiple requests to get synonyms of a single term. So I wrapped the whole algorythm in a class `SynonymsFinder` in `synonyms_finder.py` that is responsible for sending all requests and navigating in this environment.
+Wikidata has a lot of different APIs that alow requesting different types of data. Realisation of this idea requires sending multiple requests to get synonyms of a single term. So I wrapped the whole algorythm in a class `SynonymsFinder` in `synonyms_finder_refacto.py` that is responsible for sending all requests and navigating in this environment.
 ```python
 from time import time
-from synonyms_finder import Synonyms_finder
+from synonyms_finder_refacto import SynonymsFinder
+from synonyms_finder_settings import GLOBAL_SETTINGS
 
 def timeit(method):
     def timed(*args, **kw):
@@ -50,44 +51,60 @@ def timeit(method):
     return timed
 
 @timeit
-def test_one_name(*args,**kwargs):
+def test_one_name():
     name = "julia"
-    syn = Synonyms_finder(name)
+    syn = SynonymsFinder(name,GLOBAL_SETTINGS)
     syn.fit()
-    print(syn)
+    print(syn.collect_labels())
 
 test_one_name()
 ```
 Output
 ```
-Request:        julia
-Qs:             ['Q225030', 'Q15731614', 'Q2737173']
-Alias:          {'Q225030': ['JULIA', 'Julia', "ג'וליה", 'جوليا', 'جولیا', 'ジュリア', '줄리아'], 'Q15731614': ['Julia', 'Хулія', "ג'וליה", 'ジュリア', '朱利亚', '朱利亞'], 'Q2737173': ['Julia', 'Τζούλια', 'Јулија', 'Џулија', 'Джулия', 'Джулія', 'Хулия', 'Хулија', 'Юлия', 'Юлія', 'Җулия', 'Һулия', "ג'וליה", 'جوليا', 'ジュリア', '尤利娅', '茱莉亞']}
-Synonyms:       ['Julianna', 'Giulietta', 'جوليا', 'Джульен', 'Julija', 'Джулиана', 'Ђулијана', '朱丽安娜', 'ჯულიეტა', '茱莉葉', "ג'ולי", 'লিয়ানা', 'Júlía', '黎安', 'Ιουλιανή', 'Юлія', 'Julica', 'জিউলিয়া', '朱莉', 'يولي
-ا', 'Ζυλιέν', 'Јулија', 'ジュリー', 'Uljana', 'Жюли', '烏里揚娜', 'Хульета', 'ユリエ', '朱利亚娜', 'Լիանա', 'Лијана', 'ᱡᱩᱞᱤᱭᱮᱴ', 'Iúlia', 'Julya', 'جولي', '茱莉婭', 'Джулия', 'Ђулија', '胡列塔', 'Γιούλια', 'ウリヤナ', '茱
-莉艾塔', '朱莉安', '莉雅娜', '朱利', 'Julie', '朱丽卡', 'Júlia', 'জুলিয়ানা', 'জুলিকা', 'Хулиана', '줄리', 'ジュリアーナ', '朱莉娅娜', 'Юлика', 'Ýuliýa', 'Юлия', '朱莉安娜', '茱莉安娜', 'Julienne', 'ユリアーネ', 'Joelia',
- 'Julià', 'Ζυλί', 'Liana', 'Jûlija', '朱勒', 'Жюльенн', 'リアン', '율리야', 'Лиана', 'ᱡᱩᱞᱤᱠᱟ', '朱利安納', 'ジュリア', 'Жюльетта', 'Julika', '尤利纳', 'Giulia', '朱利安', 'Τζούλικα', 'جوليانا', 'Juliette', '茱莉安', 'Τζουλιάν', '茱莉婭娜', 'Juliana', '茱麗', 'Iuliana', 'Жюльетт', 'Iulia', 'Джулія', 'Јулика', 'জুলিয়েটা', 'ジューリー', 'ليان', 'ליאן', 'ユリアンナ', "ג'וליה", 'یولیا', 'リアナ', 'Ульяна', 'Τζουλ', 'Յուլիա', 'Julieta', 'יוליה
-', '朱丽叶特', 'Julia', '珠莉卡', 'Yulia', 'Τζούλια', 'Юлиана', 'Liane', 'Юліка', 'Юліанія', 'Җүли', 'Uliana', 'Giuliana', 'Уляна', 'Джулі', 'Юлианна', '茱莉亞', 'Джули', 'Джул', 'Жульєн', 'Juliane', '茱麗葉', 'Джульетта', 'جولييت', 'Імя Юлія', 'Ioulia', 'Юліана', '朱丽叶塔', 'Жюльенна', 'ᱞᱤᱭᱟᱱᱟ', 'Jūlija', 'ユリア', 'Ліана', 'Yuliya', '茱樂', '尤莉亞', '朱利亚', 'Jule', 'Τζουλιάνα', '利亞納', 'יוליאנה', 'ژولیت', 'Ouliana', '利安妮', 'ジ 
-ュリアナ', 'ยูลียา', 'Джулианна', '利亚纳', '줄리아나']
-Execution time: 22.30 sec
+{'julia': 
+    ['Dzhuljeta', 'Džuljeta', 'Giulia', 'Giuliana', 'Giuliano', 'Giulietta', 'Hulya', 'Hülya', 'Illan', 'Illán', 'Ioulia', 'Iulia', 'Iuliana', 'Iúlia', 'JULIA', 'Joelia', 'Joelija', 'Jolie', 'Jule', 'Julee', 'Jules', 'Julia', 'Julian', 'Juliana', 'Juliane', 'Julianna', 'Julianne', 'Juliano', 'Julica', 'Julie', 'Julien', 'Julienne', 'Juliet', 'Julieta', 'Julieth', 'Julietta', 'Juliette', 'Julija', 'Julika', 'Julio', 'Julius', 'Julià', 'Julián', 'Jullian', 'Jullien', 'July', 'Julya', 'Júlia', 'Júlía', 'Jûlija', 'Jūlija', 'Liana', 'Liane', 'Lijana', 'Liyana', 'Ouliana', 'Schulieta', 'Shulieta', 'Uliana', 'Uljana', 'Yulia', 'Yuliya', 'Zhulieta', 'Ýuliýa', 'Γιούλια', 'Ζυλί', 'Ζυλιέν', 'Ιουλιέτα', 'Ιουλιανή', 'Τζουλ', 'Τζουλιάν', 'Τζουλιάνα', 'Τζούλια', 'Τζούλικα', 'Χιούλια', 'Ђулиано', 'Ђулија', 'Ђулијана', 'Імя Юлія', 'Јулика', 'Јулија', 'Џулија', 'Џулијет', 'Гюлія', 'Джул', 'Джули', 'Джулиан', 'Джулиана', 'Джулиано', 'Джулиус', 'Джулия', 'Джульен', 'Джульет', 'Джульета', 'Джульетта', 'Джульєтта', 'Джулі', 'Джулія', 'Жулиета', 'Жульєн', 'Жюли', 'Жюль', 'Жюльен', 'Жюльенн', 'Жюльенна ', 'Жюльетт', 'Жюльетта', 'Ильян', 'Иулия', 'Лиана', 'Лијана', 'Ліана', 'Ліяна', 'Ульяна', 'Уляна', 'Хулиан', 'Хулиана', 'Хулио', 'Хулија', 'Хульета', 'Хюлия', 'Юлиана', 'Юлианна', 'Юлианна / Джулианна', 'Юлика', 'Юлия', 'Юлия / Джулия / Хулия', 'Юліана', 'Юліанія', 'Юліка', 'Юліюс', 'Юлія', 'Җулия', 'Җүли', 'Һулия', 'Լիանա', 'Յուլիա', "ג'ולי", "ג'וליאן", "ג'וליה", "ז'יל", 'יוליאנה', 'יוליה', 'ליאן', 'جولي', 'جوليا', 'جوليان', 'جوليانا', 'جوليس', 'جولييت', 'جولیا', 'ليان', 'يوليا', 'ژولیت', 'یولیا', 'জিউলিয়া', 'জুলিকা', 'জুলিয়ানা', 'জুলিয়েটা', 'লিয়ানা', 'ยูลียา', 'ჯულიეტა', 'ᱞᱤᱭᱟᱱᱟ', 'ᱡᱩᱞᱤᱠᱟ', 'ᱡᱩᱞᱤᱭᱮᱴ', 'ウリヤナ', 'ジュリア', 'ジュリアス', 'ジュリアナ', 'ジュリアン', 'ジュリアーナ', 'ジュリアーノ', 'ジュリエッタ', 'ジュリエット', 'ジュリー', 'ジューリー', 'ユリア', 'ユリアンナ', 'ユリアーネ', 'ユリエ', 'ユーリア', 'リアナ', 'リアン', '利亚纳', '利安妮', '吉爾斯', '尤利娅', '尤利 婭', '尤利纳', '尤莉亞', '朱丽卡', '朱丽叶', '朱丽叶塔', '朱丽安妮', '朱丽安娜', '朱利亚', '朱利亚诺', '朱利亞諾', '朱利安', '朱利安諾', '朱利斯', '朱利歐', '朱勒', '朱尔斯', '朱莉', '朱莉亞', '朱莉娅', '朱莉娅娜', '朱莉安', '朱莉安娜', '烏里揚娜', '珠莉卡', '胡列塔', '胡利亚', '胡利奥', '胡利安', '胡莉雅', '茱樂', '茱莉亞', '茱莉婭', '茱莉婭娜', '茱莉安', '茱莉安妮', '茱莉安娜', '茱莉艾塔', '茱莉葉', '茱麗', '茱麗葉', '莉雅娜', '黎安', '율리야', '줄리', '줄리아', '줄리아나']}
+Execution time: 44.74 sec
+```
+In our case, the finder will go trhough name items (instances of P31 and having link of type P460 (said to be the same)) in the result contained in the initial request and retrieve its information from WikiData. This will be done to names that have not been retrieved so far. Then it will retrieve name items contained in the child list and so on... Recurcive execution will continue until no new elements are discovered. For request "julia" the process will get repeated 4 times:
+```
+Ids captured ad level 0: ['Q10289970', 'Q1102036', 'Q11929439', 'Q127733', 'Q12900608', 
+                          'Q141520', 'Q15639217', 'Q15725563', 'Q15731628', 'Q15731689', 
+                          'Q1627850', 'Q16722683', 'Q1705088', 'Q1711631', 'Q1712302', 
+                          'Q1712326', 'Q17631793', 'Q1822678', 'Q1822679', 'Q19689456', 
+                          'Q19851095', 'Q21179009', 'Q288742', 'Q304837', 'Q33101682', 
+                          'Q348252', 'Q351311', 'Q3549015', 'Q451762', 'Q59162109', 
+                          'Q59162239', 'Q59163016', 'Q87958412', 'Q9097269']
+Ids captured ad level 1: ['Q104836751', 'Q106158340', 'Q106158452', 'Q106159216', 
+                          'Q106159353', 'Q1124155', 'Q1652291', 'Q20000410', 'Q20035791', 
+                          'Q21448857', 'Q225030', 'Q22679860', 'Q22814348', 'Q2737173',
+                          'Q29422660', 'Q56649801', 'Q59157060', 'Q59157114', 'Q59157156', 
+                          'Q6308936', 'Q64431969', 'Q66309259', 'Q66309285', 'Q89144667']
+Ids captured ad level 2: ['Q106158581', 'Q18609982', 'Q19902533', 'Q20000415', 'Q21489043', 
+                          'Q26780677', 'Q3189129', 'Q4160543', 'Q47528310', 'Q48718994', 
+                          'Q6308633']
+Ids captured ad level 3: ['Q1713171', 'Q24698962', 'Q36899945']
+Ids captured ad level 4: []
 ```
 In our case the finder found 3 Qs at the first level: 'Q225030', 'Q15731614', 'Q2737173'. Each of these Qs has a group of connections of P460 (said to be the same). Their Qs are simply not included in the output. Then once the whole list of Qs is identified, the algorythm sends a request for labels for each of identified qs. The final list of possible writings of the name is aggregated in synonyms list.  
   
 Execution time depends on the numer of request we need to send per name, but can take quite a while. Since this is an IO bounded operation, meaning that the most of this time the CPU is not performing computations, but waiting for an answer from wikidata, we could use multi threading to perform this kind of operation. The `SynonymsFinder` class supports multiple threading
 ```python
+from synonyms_finder_refacto import SynonymsFinder
+from synonyms_finder_settings import GLOBAL_SETTINGS
+
 def parse_names(names,threadLimiter=None):
     '''Function parses a list of names. Each name is parsed in a separate thread
     '''
     threads = []
     for name in names:
-        req = Synonyms_finder(name)
+        req = SynonymsFinder(name,GLOBAL_SETTINGS,threadLimiter=threadLimiter)
         req.start()
         threads.append(req)
 
     return_dict = {}
     for res in threads:
         res.join()
-        return_dict.update(res.synonyms_dict)
+        return_dict.update(res.collect_labels())
     return return_dict
 
 @timeit
@@ -102,13 +119,13 @@ test_several_names()
 ```
 Output
 ```
-Done with: Gregory
-Done with: Bill
-Done with: Michael
-Done with: George
-Done with: John
+Done with Bill
+Done with Gregory
+Done with George
+Done with Michael
+Done with John
 names_dict contains 5 elements.
-Execution time: 64.48 sec
+Execution time: 46.02 sec
 ```
 The final think will be to pass every word in every unique name in the gouvernor list trhough synonyms finder and obtain a large dictionary of synonyms stored in `data\dict\names.json`.
 ## Training dataset
@@ -164,10 +181,15 @@ Generation of false matches is much simpler. We simply split the name into words
 ![FalseSynonymsGenerator](./images/negative_synonyms_generator.png)
 ## Seameese network
 The main idea is that we need a network that will be generating some representation of a string. We will feet two strings into this network, pass them both though this network, obtain two representations (one for each string) and them compare them with some measure. The final prediction will be a linear function of this similarity. The overall architecture is presented in the figure below:  
-![model_architecture](./images/model_architecture.jpg)
+![model_architecture](./images/outer_model_transformations.png)  
+The inner model takes two strings, passes each of the through the same inner model and compares the representations with cosine similarities.
   
 I chose the following architecture for the inner model:
-![inner_model_architecture](./images/inner_model.jpg)
+![inner_model_architecture](./images/inner_model_transformations.png)  
+The inner model consists of the following layers:
+* Embedding layer, that embeds each character into a representation vector
+* Char level bidirectional layer with attention. It computes representation of each character and uses attention mechanism to make a weighted sum of character representations.
+* Word level bidirectional layer with attention. It computes representation of each word and uses attention mechanism to make a weighted sum of word representations.
 
 As a base model I will be using the approach proposed [here](https://github.com/amansrivastava17/lstm-siamese-text-similarity)
 
