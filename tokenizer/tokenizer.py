@@ -104,8 +104,8 @@ def preprocess_list_into_matrix(lst,tokenizer,max_words=None,max_char=None,debug
         words = list(set([word for name in lst for word in name.split()]))
         max_char = max([len(word) for word in words])
     
-    padded_string = [x + " _"*(max_words-len(x.split())) for x in lst][:max_words]
-    word_split = [x.split(" ",maxsplit=max_words) for x in padded_string]
+    padded_string = [x + " _"*(max_words-len(x.split())) for x in lst]
+    word_split = [x.split(" ",maxsplit=max_words-1) for x in padded_string]
     
     sequences = [tokenizer.texts_to_sequences(x) for x in word_split]    
     padded_sequences = [pad_sequences(x,maxlen=max_char,padding="post") for x in sequences]

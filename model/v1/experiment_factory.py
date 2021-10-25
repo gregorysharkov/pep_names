@@ -34,7 +34,7 @@ abs_outer_model_settings = OuterModelSettings(
     distance_settings = DistanceSettings("distance","abs"),
     n_dense_units=1,
     loss = tf.keras.losses.BinaryCrossentropy(from_logits=True),
-    optimizer=tf.keras.optimizers.Adadelta(.1),
+    optimizer=tf.keras.optimizers.Nadam(),
     metrics = [tf.keras.metrics.BinaryAccuracy(name="accuracy"),
                 tf.keras.metrics.Precision(name="precision")]
 )
@@ -55,7 +55,7 @@ BASE_EXPERIMENT = ExperimentSettings(
 
 ABS_EXPERIMENT = ExperimentSettings(
         experiment_name="2_level_rnn",
-        log_dir="logs\\baseline\\abs\\",
+        log_dir="logs\\baseline\\abs_nadam\\",
         outer_settings=abs_outer_model_settings,
         fit_settings=fit_settings,
         checkpoint=None

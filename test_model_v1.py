@@ -69,13 +69,13 @@ def get_data(save_path,limit,tokenizer,experiment_settings,refresh=False,balance
             tokenizer = tokenizer,
             max_words = experiment_settings.outer_settings.inner_settings.n_words,
             max_char = experiment_settings.outer_settings.inner_settings.n_characters,
-            batch_size = experiment_settings.fit_settings.batch_size)
+            batch_size = None)#experiment_settings.fit_settings.batch_size)
         val_features,val_match,val = construct_features(
             data = raw_train,
             tokenizer = tokenizer,
             max_words = experiment_settings.outer_settings.inner_settings.n_words,
             max_char = experiment_settings.outer_settings.inner_settings.n_characters,
-            batch_size = experiment_settings.fit_settings.batch_size)
+            batch_size = None)#experiment_settings.fit_settings.batch_size)
 
         save_tf_dataset(train,save_path+"train/train")
         save_tf_dataset(train_features,save_path+"train/train_features")
@@ -144,7 +144,12 @@ def run_on_the_real_data(tokenizer:Tokenizer, experiment_settings: ExperimentSet
     """
     save_path = "data\\tokenized\\20211024\\"
     (train,train_features,val_match), (val,val_features,val_match) = get_data(save_path, limit, tokenizer, experiment_settings, refresh=refresh, balance=True)
+    train = train.batch(experiment_settings.fit_settings.batch_size)
+    val = val.batch(experiment_settings.fit_settings.batch_size)
+    print(train.take(2))
 
+    for i, ((x, y),z) in enumerate(train):
+        print(i, x.numpy().shape, y.numpy().shape)
     #model setup and train
     model = OuterModel(experiment_settings.outer_settings)
     model.compile(optimizer=experiment_settings.outer_settings.optimizer,
@@ -152,6 +157,7 @@ def run_on_the_real_data(tokenizer:Tokenizer, experiment_settings: ExperimentSet
                   metrics=experiment_settings.outer_settings.metrics)
     model.fit(train,
               validation_data = val,
+              batch_size = experiment_settings.fit_settings.batch_size,
               epochs=experiment_settings.fit_settings.epochs,
               verbose=experiment_settings.fit_settings.verbose,
               callbacks=experiment_settings.fit_settings.callbacks)
@@ -193,15 +199,15 @@ def main():
     tokenizer_path = "data\\tokenizer\\20211023_tokenizer.json"
     tokenizer = load_tokenizer(tokenizer_path)
 
-    experiment_settings = BASE_EXPERIMENT
+    experiment_settings = ABS_EXPERIMENT
 
-    checkpoint_path = None #"/data/lab/cple/emb/grigory/name_similarity/experiments_with_two_layers/with_abs/20211019-150729/weights/"
+    checkpoint_path = None #".../weights/"
     #run_test(tokenizer, experiment_settings, checkpoint_path)
     run_on_the_real_data(
         tokenizer = tokenizer,
         experiment_settings = experiment_settings,
         limit=None,
-        refresh=True)
+        refresh=False)
     # restore_experiment(checkpoint_path, experiment_settings)
 
 
