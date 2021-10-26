@@ -1,3 +1,5 @@
+import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -16,7 +18,7 @@ from model.v1.experiment_factory import BASE_EXPERIMENT, ABS_EXPERIMENT
 from model.v1.model_utils import load_model_from_checkpoint
 from model.v1.model_settings import ExperimentSettings
 
-tf.config.run_functions_eagerly(False)
+tf.config.run_functions_eagerly(False) 
 
 def construct_features(data,tokenizer,max_words=None,max_char=None,batch_size=None):
     """
@@ -138,7 +140,7 @@ def run_test(tokenizer:Tokenizer, experiment_settings: ExperimentSettings, check
         print(f"Comaring: '{name}' and '{combi}': \t{simi:.4f}")
 
 
-def run_on_the_real_data(tokenizer:Tokenizer, experiment_settings: ExperimentSettings, limit:int, refresh=False):
+def run_on_the_real_data(tokenizer:Tokenizer, experiment_settings: ExperimentSettings, limit:int, refresh=False,checkpoint_path=None):
     """
     Fits a new model
     """
@@ -151,10 +153,13 @@ def run_on_the_real_data(tokenizer:Tokenizer, experiment_settings: ExperimentSet
     for i, ((x, y),z) in enumerate(train):
         print(i, x.numpy().shape, y.numpy().shape)
     #model setup and train
-    model = OuterModel(experiment_settings.outer_settings)
-    model.compile(optimizer=experiment_settings.outer_settings.optimizer,
-                  loss=experiment_settings.outer_settings.loss,
-                  metrics=experiment_settings.outer_settings.metrics)
+    if checkpoint_path:
+        model = load_model_from_checkpoint(checkpoint_path,experiment_settings)
+    else:
+        model = OuterModel(experiment_settings.outer_settings)
+        model.compile(optimizer=experiment_settings.outer_settings.optimizer,
+                    loss=experiment_settings.outer_settings.loss,
+                    metrics=experiment_settings.outer_settings.metrics)
     model.fit(train,
               validation_data = val,
               batch_size = experiment_settings.fit_settings.batch_size,
@@ -201,13 +206,14 @@ def main():
 
     experiment_settings = ABS_EXPERIMENT
 
-    checkpoint_path = None #".../weights/"
+    checkpoint_path = None#"logs\\baseline\\abs_nadam\\20211025-224121\\weights\\"
     #run_test(tokenizer, experiment_settings, checkpoint_path)
     run_on_the_real_data(
         tokenizer = tokenizer,
         experiment_settings = experiment_settings,
         limit=None,
-        refresh=False)
+        refresh=False,
+        checkpoint_path=checkpoint_path)
     # restore_experiment(checkpoint_path, experiment_settings)
 
 

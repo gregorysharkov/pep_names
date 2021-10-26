@@ -31,7 +31,7 @@ def main():
     print(f"the name list length: {len(raw_data.governor)}")
 
     output_path = "data\\combinations\\"
-    true_combinations = generate_true_match(name_list=raw_data.governor, name_dict=name_dict, n_samples=20, n_samples_from_dict=20)
+    true_combinations = generate_true_match(name_list=raw_data.governor, name_dict=name_dict, n_samples=50, n_samples_from_dict=30)
     print(f"Length of true_combinations: {len(true_combinations)}")
     true_combinations.to_csv(output_path+"true_match.csv",sep=";",index=False)
     pass
