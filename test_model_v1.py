@@ -167,6 +167,7 @@ def run_on_the_real_data(tokenizer:Tokenizer, experiment_settings: ExperimentSet
               verbose=experiment_settings.fit_settings.verbose,
               callbacks=experiment_settings.fit_settings.callbacks)
 
+    print(model.summary())
     return model
 
 
