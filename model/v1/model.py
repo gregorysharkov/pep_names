@@ -14,7 +14,7 @@ class BiGruWithAttention(Layer):
         self.gru_layer = tf.keras.layers.GRU(self.settings.n_units, 
                                              return_sequences=True,
                                              input_shape=self.settings.input_shape, 
-                                             bias_regularizer=tf.keras.regularizers.l1(),
+                                             bias_regularizer=tf.keras.regularizers.l2(),
                                              name=self.settings.name+"_gru")
         self.bidirectional_layer = tf.keras.layers.Bidirectional(self.gru_layer, name=self.settings.name+"_BiGru")
         self.attention_layer = Attention(return_attention=True, name = self.settings.name+"_attention_vec")
