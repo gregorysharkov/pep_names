@@ -27,7 +27,7 @@ abs_outer_model_settings = OuterModelSettings(
         n_words=10,
         n_characters=10,
         embedding_input_dim=162,
-        embedding_output_dim=512,
+        embedding_output_dim=1024,
         n_char_rnn_units=40,
         n_word_rnn_units=80,
     ),
