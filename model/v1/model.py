@@ -108,11 +108,11 @@ class OuterModel(Model):
             print(f"{self.input_b=}")
 
         repr_a = self.inner_model(self.input_a, training=training, debug=debug)
-        repr_a = self.string_features(repr_a,training=training)
         repr_a = self.string_normalization(repr_a,training=training)
+        repr_a = self.string_features(repr_a,training=training)
         repr_b = self.inner_model(self.input_b, training=training, debug=debug)
-        repr_b = self.string_features(repr_b,training=training)
         repr_b = self.string_normalization(repr_b,training=training)
+        repr_b = self.string_features(repr_b,training=training)
 
         if debug:
             print(f"{repr_a=}")
