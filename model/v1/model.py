@@ -100,7 +100,7 @@ class OuterModel(Model):
         self.input_a = tf.keras.Input(shape=(settings.inner_settings.n_words,settings.inner_settings.n_characters),name='Input_a')
         self.input_b = tf.keras.Input(shape=(settings.inner_settings.n_words,settings.inner_settings.n_characters),name='Input_b')
         self.inner_model = InnerModel(self.settings.inner_settings)
-        self.string_features = tf.keras.layers.Dense(160,activation="relu")
+        self.string_features = tf.keras.layers.Dense(300,activation="relu")
         self.string_normalization = tf.keras.layers.BatchNormalization()
         self.distance_layer = DistanceLayer(self.settings.distance_settings)
 
