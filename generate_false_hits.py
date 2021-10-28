@@ -1,6 +1,9 @@
+import random
+import pandas as pd
 from utils.utils import load_data
+from utils.generation_utils import abbreviate_random_word, remove_random_word
 
-def generate_false_match(name_split,data,col_name):
+def generate_false_match(name_split:list[str],data:pd.DataFrame,col_name:str)->list:
     '''function generates a of false matches for a given list of words
     
     Args:
@@ -18,9 +21,10 @@ def generate_false_match(name_split,data,col_name):
     return filtered_data
 
         
-def process_dataset(data,col_name):
+def process_dataset(data:pd.DataFrame,col_name:str,frac:float=.6)->pd.DataFrame:
     '''Function processes dataset by generating false combinations for every line'''
     #generate combination for every line
+    data = data.dropna()
     data["combinations"] = data[col_name+"_split"].apply(lambda x: generate_false_match(x,data,col_name))
 
     #add match column:
@@ -29,9 +33,20 @@ def process_dataset(data,col_name):
     #explode the data
     data = data.explode(column="combinations")
 
-    #drop empty values
+    #generate shorts and abbreviations
+    random.seed(20211028)
+    abbreviations_sample = data.sample(frac=frac)
+    abbreviations_sample.combinations.apply(abbreviate_random_word)
+    
+    shorts_sample = data.sample(frac=frac)
+    shorts_sample.combinations.apply(remove_random_word)
+
+    data = pd.concat([data,abbreviations_sample,shorts_sample])
+
+    #drop empty values and do some cleaning
     data = data.dropna()
     data = data[[col_name,"combinations","match"]]
+    data = data.drop_duplicates()
 
     return data
 
