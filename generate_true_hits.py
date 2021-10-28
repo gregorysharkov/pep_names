@@ -1,16 +1,24 @@
+import random
+from tqdm import tqdm
 import pandas as pd
 from utils.utils import load_dict, load_data
 from true_combination_generator.true_combination_generator import TrueSynonymsGenerator
+from utils.generation_utils import abbreviate_random_word, remove_random_word
 
 
-def generate_true_match(name_list,name_dict,n_samples=None,n_samples_from_dict=None):
-    '''Function generates a dataframe with true matches'''
+def generate_true_match(name_list:list[str],name_dict:dict,n_samples:int=None,n_samples_from_dict:int=None,frac:float=.5) -> pd.DataFrame:
+    '''
+    Function generates a dataframe with true matches
+    
+    Args
+    '''
     combinations = []
+    pbar = tqdm(total = len(name_list))
     for name in name_list:
-        print(name)
         generator = TrueSynonymsGenerator(name,n_sample_from_dict=n_samples_from_dict)
         generator.fit(name_dict)
         combinations.append(generator.sample(n_samples))
+        pbar.update(n=1)
 
     return_df = pd.DataFrame({
         "name" : name_list,
@@ -18,6 +26,14 @@ def generate_true_match(name_list,name_dict,n_samples=None,n_samples_from_dict=N
         "match": [1]*len(name_list)
     }).explode(column="combination", ignore_index=True)
 
+    random.seed(20211028)
+    abbreviations_sample = return_df.sample(frac=frac)
+    abbreviations_sample.combination.apply(abbreviate_random_word)
+    
+    shorts_sample = return_df.sample(frac=frac)
+    shorts_sample.combination.apply(remove_random_word)
+
+    return_df = pd.concat([return_df,abbreviations_sample,shorts_sample])
     return return_df
 
 
