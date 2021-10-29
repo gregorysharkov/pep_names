@@ -26,7 +26,7 @@ def load_data(source_path,limit=None,debug=False,balance=True):
     print(f"{len(true_data)}")
     false_data = load_dataset(source_path+"false_match.csv", limit=limit)#.sample(n=len(true_data),random_state=20210924)
     if balance:
-        false_data = false_data.sample(n=len(true_data),random_state=20210924)
+        false_data = false_data.sample(n=len(true_data),replace=True,random_state=20210924)
     print(f"{len(false_data)}")
     combined_data = pd.concat([true_data,false_data]).\
         sample(frac=1,random_state=20210924)

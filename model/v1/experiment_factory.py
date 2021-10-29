@@ -27,14 +27,14 @@ abs_outer_model_settings = OuterModelSettings(
         n_words=10,
         n_characters=10,
         embedding_input_dim=162,
-        embedding_output_dim=1024,
-        n_char_rnn_units=100,
-        n_word_rnn_units=200,
+        embedding_output_dim=512,
+        n_char_rnn_units=50,
+        n_word_rnn_units=100,
     ),
     distance_settings = DistanceSettings("distance","abs"),
     n_dense_units=1,
     loss = tf.keras.losses.BinaryCrossentropy(from_logits=True),
-    optimizer=tf.keras.optimizers.Adadelta(.005),
+    optimizer=tf.keras.optimizers.Adam(.001),
     metrics = [tf.keras.metrics.BinaryAccuracy(name="accuracy"),
                 tf.keras.metrics.Precision(name="precision")]
 )
