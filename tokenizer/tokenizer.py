@@ -17,7 +17,7 @@ def train_tokenizer(lst) -> Tokenizer:
     Returns:
         tokenizer trained on the given data
     """
-    tk = Tokenizer(num_words=None, char_level=True, oov_token="_",lower=False)
+    tk = Tokenizer(num_words=None, char_level=True, oov_token="_",lower=False,filters='!"#$%&()*+-/:;<=>?@[\\]^_`{|}~\t\n')
     tk.fit_on_texts(lst)
     return tk
 
