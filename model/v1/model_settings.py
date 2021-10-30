@@ -43,7 +43,8 @@ class OuterModelSettings:
     name: str
     inner_settings: InnerModelSettings
     distance_settings: DistanceSettings
-    n_dense_units: int = 1
+    n_dense_units: int = 128
+    p_dropout: float = .5
     loss: tf.losses.Loss = tf.keras.losses.BinaryCrossentropy()
     optimizer : tf.keras.optimizers.Optimizer = tf.keras.optimizers.Adam(1e-3)
     metrics : list[tf.keras.metrics.Metric] = field(default_factory=list)
