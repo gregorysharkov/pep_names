@@ -103,7 +103,7 @@ class OuterModel(Model):
         if self.settings.p_dropout:
             self.dropout_layer = tf.keras.layers.Dropout(settings.p_dropout)
         self.string_normalization = tf.keras.layers.BatchNormalization()
-        self.string_features = tf.keras.layers.Dense(settings.n_dense_units,activation="relu",bias_regularizer=tf.keras.regularizers.L2(0.01))
+        self.string_features = tf.keras.layers.Dense(settings.n_dense_units,activation="relu",bias_regularizer=tf.keras.regularizers.L2(0.1))
         self.distance_layer = DistanceLayer(self.settings.distance_settings)
 
     def call(self, inputs, training=False, debug=False):
