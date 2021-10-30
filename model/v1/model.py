@@ -100,8 +100,10 @@ class OuterModel(Model):
         self.input_a = tf.keras.Input(shape=(settings.inner_settings.n_words,settings.inner_settings.n_characters),name='Input_a')
         self.input_b = tf.keras.Input(shape=(settings.inner_settings.n_words,settings.inner_settings.n_characters),name='Input_b')
         self.inner_model = InnerModel(self.settings.inner_settings)
-        self.string_features = tf.keras.layers.Dense(300,activation="relu")
+        if self.settings.p_dropout:
+            self.dropout_layer = tf.keras.layers.Dropout(settings.p_dropout)
         self.string_normalization = tf.keras.layers.BatchNormalization()
+        self.string_features = tf.keras.layers.Dense(settings.n_dense_units,activation="relu",bias_regularizer=tf.keras.regularizers.L2(0.01))
         self.distance_layer = DistanceLayer(self.settings.distance_settings)
 
     def call(self, inputs, training=False, debug=False):
@@ -113,9 +115,14 @@ class OuterModel(Model):
 
         repr_a = self.inner_model(self.input_a, training=training, debug=debug)
         repr_a = self.string_normalization(repr_a,training=training)
+        if self.settings.p_dropout:
+            repr_a = self.dropout_layer(repr_a,training=training)
         repr_a = self.string_features(repr_a,training=training)
+
         repr_b = self.inner_model(self.input_b, training=training, debug=debug)
         repr_b = self.string_normalization(repr_b,training=training)
+        if self.settings.p_dropout:
+            repr_b = self.dropout_layer(repr_b,training=training)
         repr_b = self.string_features(repr_b,training=training)
 
         if debug:

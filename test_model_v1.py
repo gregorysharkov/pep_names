@@ -150,8 +150,8 @@ def run_on_the_real_data(tokenizer:Tokenizer, experiment_settings: ExperimentSet
     val = val.batch(experiment_settings.fit_settings.batch_size)
     print(train.take(2))
 
-    for i, ((x, y),z) in enumerate(train):
-        print(i, x.numpy().shape, y.numpy().shape)
+    # for i, ((x, y),z) in enumerate(train):
+    #     print(i, x.numpy().shape, y.numpy().shape)
     #model setup and train
     if checkpoint_path:
         model = load_model_from_checkpoint(checkpoint_path,experiment_settings)
@@ -200,6 +200,7 @@ def restore_experiment(checkpoint_path, experiment_settings):
     plt.xlabel("Similarity measure")
     plt.ylabel("Number of predictions")
     plt.savefig("name_similarity/images/plot_with_abs.png",dpi=300)
+
 
 def main():
     tokenizer_path = "data\\tokenizer\\20211023_tokenizer.json"

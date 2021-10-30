@@ -27,14 +27,15 @@ abs_outer_model_settings = OuterModelSettings(
         n_words=10,
         n_characters=10,
         embedding_input_dim=162,
-        embedding_output_dim=512,
-        n_char_rnn_units=50,
-        n_word_rnn_units=100,
+        embedding_output_dim=256,
+        n_char_rnn_units=20,
+        n_word_rnn_units=40,
     ),
     distance_settings = DistanceSettings("distance","abs"),
-    n_dense_units=1,
+    n_dense_units=128,
+    p_dropout = .7,
     loss = tf.keras.losses.BinaryCrossentropy(from_logits=True),
-    optimizer=tf.keras.optimizers.Adam(.001),
+    optimizer=tf.keras.optimizers.Adam(.0001),
     metrics = [tf.keras.metrics.BinaryAccuracy(name="accuracy"),
                 tf.keras.metrics.Precision(name="precision")]
 )
@@ -55,7 +56,7 @@ BASE_EXPERIMENT = ExperimentSettings(
 
 ABS_EXPERIMENT = ExperimentSettings(
         experiment_name="2_level_rnn",
-        log_dir="logs\\baseline\\abs_adadelta\\",
+        log_dir="logs\\baseline\\adam\\",
         outer_settings=abs_outer_model_settings,
         fit_settings=fit_settings,
         checkpoint=None
