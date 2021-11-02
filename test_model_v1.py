@@ -211,14 +211,14 @@ def main():
 
     experiment_settings = ABS_EXPERIMENT
 
-    checkpoint_path = "logs\\baseline\\adadelta\\20211102-200019\\weights\\"
+    checkpoint_path = None #"logs\\baseline\\adadelta\\20211102-211837\\weights\\"
     run_on_the_real_data(
         tokenizer = tokenizer,
         experiment_settings = experiment_settings,
         limit=None,
         refresh=False,
         checkpoint_path=checkpoint_path)
-    run_test(tokenizer, experiment_settings, checkpoint_path)
+    # run_test(tokenizer, experiment_settings, checkpoint_path)
     # restore_experiment(checkpoint_path, experiment_settings)
 
 
