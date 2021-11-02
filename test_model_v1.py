@@ -214,7 +214,7 @@ def main():
         tokenizer = tokenizer,
         experiment_settings = experiment_settings,
         limit=None,
-        refresh=True,
+        refresh=False,
         checkpoint_path=checkpoint_path)
     # restore_experiment(checkpoint_path, experiment_settings)
 
