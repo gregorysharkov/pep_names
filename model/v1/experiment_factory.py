@@ -42,7 +42,7 @@ abs_outer_model_settings = OuterModelSettings(
 
 fit_settings = FitSettings(
     batch_size=125,
-    epochs=5,
+    epochs=15,
     verbose=1,
 )
 
