@@ -107,9 +107,11 @@ def run_test(tokenizer:Tokenizer, experiment_settings: ExperimentSettings, check
         experiment_settings: an instance of ExperimentSettings
         checkpoint_path: path to the weihts of a model that has already been trained. If none, a new model will be generated
     """
-    test_string = ["Grigory Sharkov", "Sharkov Grigory", "Boris Jonson","Bill Clinton","Bill Gates"]
-    test_combinations = ["Grigory Sharkov", "Grigory Sharkov", "Moris Jonson","George Washington","William Gates"]
-    test_match = [1,1,0,0,1]
+    test_string = ["Grigory Sharkov", "Grigory Sharkov", "Sharkov Grigory", 
+                   "Boris Jonson", "Bill Clinton", "Bill Gates", "Bill Gates"]
+    test_combinations = ["Grigory Sharkov", "Grigory Sharkov", "Grigory Sharkov", 
+                         "Moris Jonson", "George Washington", "William Gates", "Bill Clinton"]
+    test_match = [1,1,1,0,0,1,0]
 
     names = preprocess_list_into_matrix(
         lst = test_string,
@@ -209,14 +211,14 @@ def main():
 
     experiment_settings = ABS_EXPERIMENT
 
-    checkpoint_path = None #"logs\\baseline\\adam\\20211030-160923\\weights\\"
-    # run_test(tokenizer, experiment_settings, checkpoint_path)
+    checkpoint_path = "logs\\baseline\\adadelta\\20211102-200019\\weights\\"
     run_on_the_real_data(
         tokenizer = tokenizer,
         experiment_settings = experiment_settings,
         limit=None,
         refresh=False,
         checkpoint_path=checkpoint_path)
+    run_test(tokenizer, experiment_settings, checkpoint_path)
     # restore_experiment(checkpoint_path, experiment_settings)
 
 
