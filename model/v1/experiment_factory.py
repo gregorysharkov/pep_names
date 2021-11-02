@@ -35,14 +35,14 @@ abs_outer_model_settings = OuterModelSettings(
     n_dense_units=80,
     p_dropout = .7,
     loss = tf.keras.losses.BinaryCrossentropy(from_logits=True),
-    optimizer=tf.keras.optimizers.Adam(.00001),
+    optimizer=tf.keras.optimizers.Adam(.0001),
     metrics = [tf.keras.metrics.BinaryAccuracy(name="accuracy"),
                 tf.keras.metrics.Precision(name="precision")]
 )
 
 fit_settings = FitSettings(
-    batch_size=250,
-    epochs=10,
+    batch_size=125,
+    epochs=5,
     verbose=1,
 )
 
