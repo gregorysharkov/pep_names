@@ -33,7 +33,7 @@ abs_outer_model_settings = OuterModelSettings(
     ),
     distance_settings = DistanceSettings("distance","abs"),
     n_dense_units=80,
-    p_dropout = .7,
+    p_dropout = .5,
     loss = tf.keras.losses.BinaryCrossentropy(from_logits=True),
     optimizer=tf.keras.optimizers.Adadelta(),
     metrics = [tf.keras.metrics.BinaryAccuracy(name="accuracy"),
