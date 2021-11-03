@@ -211,7 +211,7 @@ def main():
 
     experiment_settings = ABS_EXPERIMENT
 
-    checkpoint_path = None #"logs\\baseline\\adadelta\\20211102-211837\\weights\\"
+    checkpoint_path = None #"logs\\baseline\\deeper_adadelta\\20211102-222838\\weights\\"
     run_on_the_real_data(
         tokenizer = tokenizer,
         experiment_settings = experiment_settings,
