@@ -28,8 +28,8 @@ abs_outer_model_settings = OuterModelSettings(
         n_characters=10,
         embedding_input_dim=162,
         embedding_output_dim=512,
-        n_char_rnn_units=20,
-        n_word_rnn_units=40,
+        n_char_rnn_units=40,
+        n_word_rnn_units=80,
     ),
     distance_settings = DistanceSettings("distance","abs"),
     n_dense_units=80,
@@ -42,7 +42,7 @@ abs_outer_model_settings = OuterModelSettings(
 
 fit_settings = FitSettings(
     batch_size=125,
-    epochs=5,
+    epochs=15,
     verbose=1,
 )
 
@@ -56,7 +56,7 @@ BASE_EXPERIMENT = ExperimentSettings(
 
 ABS_EXPERIMENT = ExperimentSettings(
         experiment_name="2_level_rnn",
-        log_dir="logs\\baseline\\deeper_adadelta\\",
+        log_dir="logs\\baseline\\deeper_gru_adadelta\\",
         outer_settings=abs_outer_model_settings,
         fit_settings=fit_settings,
         checkpoint=None
