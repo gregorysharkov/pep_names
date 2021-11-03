@@ -56,7 +56,7 @@ BASE_EXPERIMENT = ExperimentSettings(
 
 ABS_EXPERIMENT = ExperimentSettings(
         experiment_name="2_level_rnn",
-        log_dir="logs\\baseline\\deeper_gru_adadelta\\",
+        log_dir="logs\\baseline\\default_distance_adadelta\\",
         outer_settings=abs_outer_model_settings,
         fit_settings=fit_settings,
         checkpoint=None

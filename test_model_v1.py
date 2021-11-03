@@ -110,7 +110,7 @@ def run_test(tokenizer:Tokenizer, experiment_settings: ExperimentSettings, check
     test_string = ["Grigory Sharkov", "Grigory Sharkov", "Sharkov Grigory", 
                    "Boris Jonson", "Bill Clinton", "Bill Gates", "Bill Gates"]
     test_combinations = ["Grigory Sharkov", "Grigory Sharkov", "Grigory Sharkov", 
-                         "Moris Jonson", "George Washington", "William Gates", "Bill Clinton"]
+                         "Jonson Morris", "George Washington", "William Gates", "Bill Clinton"]
     test_match = [1,1,1,0,0,1,0]
 
     names = preprocess_list_into_matrix(
@@ -211,14 +211,14 @@ def main():
 
     experiment_settings = ABS_EXPERIMENT
 
-    checkpoint_path = None #"logs\\baseline\\deeper_adadelta\\20211102-222838\\weights\\"
-    run_on_the_real_data(
-        tokenizer = tokenizer,
-        experiment_settings = experiment_settings,
-        limit=None,
-        refresh=False,
-        checkpoint_path=checkpoint_path)
-    # run_test(tokenizer, experiment_settings, checkpoint_path)
+    checkpoint_path = "logs\\baseline\\default_distance_adadelta\\20211103-125611\\weights\\"
+    # run_on_the_real_data(
+    #     tokenizer = tokenizer,
+    #     experiment_settings = experiment_settings,
+    #     limit=None,
+    #     refresh=False,
+    #     checkpoint_path=checkpoint_path)
+    run_test(tokenizer, experiment_settings, checkpoint_path)
     # restore_experiment(checkpoint_path, experiment_settings)
 
 
